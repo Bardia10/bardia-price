@@ -305,6 +305,29 @@ const MyProducts = () => {
 };
 
 const ProductDetail = () => {
+  // State for deleting competitor IDs
+  const [deletingCompetitorIds, setDeletingCompetitorIds] = useState<Set<number>>(new Set());
+
+  // Handler for deleting competitor
+  const handleDeleteCompetitor = async (competitorId: number) => {
+    if (deletingCompetitorIds.has(competitorId)) return;
+    setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
+    try {
+      await authorizedFetch(
+        `https://bardiabootcampbasalam.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${competitorId}`,
+        { method: 'DELETE' }
+      );
+      setRefreshTrigger((v) => v + 1);
+    } catch (e) {
+      alert('خطا در حذف رقیب.');
+    } finally {
+      setDeletingCompetitorIds(prev => {
+        const next = new Set(prev);
+        next.delete(competitorId);
+        return next;
+      });
+    }
+  };
   const { navigate, selectedProduct, authorizedFetch, basalamToken, setGlobalLoading } = useContext(AppContext);
   const [showOriginalProductFloating, setShowOriginalProductFloating] = useState(false);
   const [isFloatingExpanded, setIsFloatingExpanded] = useState(false);
@@ -1114,11 +1137,23 @@ const ProductDetail = () => {
                   <p className="text-red-600 text-sm text-center py-4">{confirmedCompetitorsError}</p>
                 ) : confirmedCompetitorDetails.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      // ...existing code...
                       {confirmedCompetitorDetails.map((comp) => {
                         const cheaper = typeof comp.price === 'number' && comp.price > 0 && comp.price < selectedProduct.price;
                         const equal = comp.price === selectedProduct.price;
+                        const isDeleting = deletingCompetitorIds.has(comp.id);
                         return (
-                          <div key={comp.id} className={`bg-gray-50 rounded-lg border p-3 flex flex-col items-center text-center ${cheaper ? 'border-green-300' : !equal && comp.price ? 'border-red-200' : ''}`}>
+                          <div key={comp.id} className={`relative bg-gray-50 rounded-lg border p-3 flex flex-col items-center text-center ${cheaper ? 'border-green-300' : !equal && comp.price ? 'border-red-200' : ''}`}>
+                            {/* Delete button */}
+                            <button
+                              className="absolute top-2 left-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition text-xs z-10"
+                              title="حذف رقیب"
+                              onClick={() => handleDeleteCompetitor(comp.id)}
+                              disabled={isDeleting}
+                              style={{ opacity: isDeleting ? 0.5 : 1 }}
+                            >
+                              <X size={14} />
+                            </button>
                             <img
                               src={comp.photo || 'https://placehold.co/120x120/cccccc/333333?text=Comp'}
                               alt={comp.title}
