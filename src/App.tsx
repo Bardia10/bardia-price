@@ -202,16 +202,18 @@ const MyProducts = () => {
     }
   }, [fetchProducts]);
 
-  // Search with debounce
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      // Reset to page 1 and fetch with new search term
-      setCurrentPage(1);
-      fetchProducts(1, searchTerm);
-    }, 500); // 500ms debounce
-
-    return () => clearTimeout(timeoutId);
+  // Search function - only called when search button is clicked
+  const handleSearch = useCallback(() => {
+    setCurrentPage(1);
+    fetchProducts(1, searchTerm);
   }, [searchTerm, fetchProducts]);
+
+  // Clear search and show all products
+  const handleClearSearch = useCallback(() => {
+    setSearchTerm('');
+    setCurrentPage(1);
+    fetchProducts(1, '');
+  }, [fetchProducts]);
 
   // Load more function
   const loadMoreProducts = useCallback(() => {
@@ -238,15 +240,34 @@ const MyProducts = () => {
       <div className="p-4 flex flex-col space-y-4">
         {isLoadingApi && <LoadingSpinner />}
         {apiError && <div className="text-red-600 text-sm text-right">{apiError}</div>}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="جستجوی محصول..."
-            className="w-full p-3 pl-10 pr-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="جستجوی محصول..."
+              className="w-full p-3 pl-10 pr-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          </div>
+          <button
+            onClick={handleSearch}
+            disabled={isLoadingApi}
+            className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            جستجو
+          </button>
+          {searchTerm && (
+            <button
+              onClick={handleClearSearch}
+              disabled={isLoadingApi}
+              className="px-4 py-3 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              پاک کردن
+            </button>
+          )}
         </div>
 
 
