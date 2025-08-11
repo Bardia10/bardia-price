@@ -100,10 +100,10 @@ const MyProductCard = ({ product, onClick, onBasalamPageClick }: any) => (
 const MyProducts = () => {
   const { navigate, setSelectedProduct, authorizedFetch, basalamToken, setGlobalLoading } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState('');
-
-  const [displayCount, setDisplayCount] = useState(6);
-  const productsRef = useRef<HTMLDivElement | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMorePages, setHasMorePages] = useState(true);
   const [isLoadingApi, setIsLoadingApi] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [myProducts, setMyProducts] = useState<any[]>([]);
 
@@ -142,73 +142,85 @@ const MyProducts = () => {
     } as any;
   };
 
-  // Fetch my products on entering this page
-  const fetchedOnceRef = useRef(false);
-  useEffect(() => {
-    let cancelled = false;
-    const fetchProducts = async () => {
-      if (!basalamToken) return;
-      if (fetchedOnceRef.current) return;
-      fetchedOnceRef.current = true;
+  // Fetch products function
+  const fetchProducts = useCallback(async (page: number, query: string, isLoadMore: boolean = false) => {
+    if (!basalamToken) return;
+    
+    if (isLoadMore) {
+      setIsLoadingMore(true);
+    } else {
       setIsLoadingApi(true);
       setGlobalLoading(true);
-      setApiError(null);
-      try {
-        const res = await authorizedFetch('https://n8nstudent.dotavvab.com/webhook/my-products');
-        let data: any = null;
-        try { data = await res.json(); } catch {}
-        if (!res.ok) {
-          const message = (data && (data.message || data.error)) || 'خطا در دریافت محصولات';
-          throw new Error(message);
-        }
-        const products = Array.isArray(data?.products) ? data.products.map(mapApiProduct) : [];
-        if (!cancelled) {
-          setMyProducts(products);
-        }
-      } catch (e: any) {
-        if (!cancelled) setApiError(e?.message || 'خطای نامشخص');
-      } finally {
-        if (!cancelled) {
-          setIsLoadingApi(false);
-          setGlobalLoading(false);
-        }
-      }
-    };
-    fetchProducts();
-    return () => { cancelled = true; };
-  }, [authorizedFetch, basalamToken, setGlobalLoading]);
-
-  const filteredProducts = myProducts
-    .filter((product: any) => product.title.toLowerCase().includes(searchTerm.toLowerCase()));
-
-  const displayedProducts = filteredProducts.slice(0, displayCount);
-
-  const loadMoreProducts = useCallback(() => {
-    setTimeout(() => {
-      setDisplayCount((prevCount) => Math.min(prevCount + 6, filteredProducts.length));
-    }, 300);
-  }, [filteredProducts.length]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && displayCount < filteredProducts.length) {
-          loadMoreProducts();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (productsRef.current) {
-      observer.observe(productsRef.current);
     }
-
-    return () => {
-      if (productsRef.current) {
-        observer.unobserve(productsRef.current);
+    setApiError(null);
+    
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        q: query
+      });
+      const url = `https://n8nstudent.dotavvab.com/webhook/my-products?${params}`;
+      const res = await authorizedFetch(url);
+      let data: any = null;
+      try { data = await res.json(); } catch {}
+      if (!res.ok) {
+        const message = (data && (data.message || data.error)) || 'خطا در دریافت محصولات';
+        throw new Error(message);
       }
-    };
-  }, [displayCount, filteredProducts.length, loadMoreProducts]);
+      const products = Array.isArray(data?.products) ? data.products.map(mapApiProduct) : [];
+      
+      if (isLoadMore) {
+        // Append to existing products
+        setMyProducts(prev => [...prev, ...products]);
+      } else {
+        // Replace products (new search or first load)
+        setMyProducts(products);
+      }
+      
+      // Check if there are more pages (assuming if we get less than 50 products, no more pages)
+      setHasMorePages(products.length === 50);
+      
+    } catch (e: any) {
+      setApiError(e?.message || 'خطای نامشخص');
+    } finally {
+      if (isLoadMore) {
+        setIsLoadingMore(false);
+      } else {
+        setIsLoadingApi(false);
+        setGlobalLoading(false);
+      }
+    }
+  }, [authorizedFetch, basalamToken, setGlobalLoading, mapApiProduct]);
+
+  // Initial fetch on page load
+  const fetchedOnceRef = useRef(false);
+  useEffect(() => {
+    if (!fetchedOnceRef.current) {
+      fetchedOnceRef.current = true;
+      fetchProducts(1, '');
+      setCurrentPage(1);
+    }
+  }, [fetchProducts]);
+
+  // Search with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      // Reset to page 1 and fetch with new search term
+      setCurrentPage(1);
+      fetchProducts(1, searchTerm);
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, fetchProducts]);
+
+  // Load more function
+  const loadMoreProducts = useCallback(() => {
+    if (!isLoadingMore && hasMorePages) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      fetchProducts(nextPage, searchTerm, true);
+    }
+  }, [currentPage, searchTerm, fetchProducts, isLoadingMore, hasMorePages]);
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
@@ -239,8 +251,8 @@ const MyProducts = () => {
 
 
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-16">
-          {displayedProducts.map((product: any) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
+          {myProducts.map((product: any) => (
             <MyProductCard
               key={product.id}
               product={product}
@@ -248,13 +260,24 @@ const MyProducts = () => {
               onBasalamPageClick={(e: any) => handleBasalamPageClick(e, product.basalamUrl)}
             />
           ))}
-          {displayCount < filteredProducts.length && (
-            <div ref={productsRef} className="col-span-full">
-              <LoadingSpinner />
-            </div>
-          )}
         </div>
-        {displayedProducts.length === 0 && <p className="text-center text-gray-500 mt-8">محصولی یافت نشد.</p>}
+        
+        {/* Load More Button */}
+        {hasMorePages && (
+          <div className="flex justify-center py-4">
+            <button
+              onClick={loadMoreProducts}
+              disabled={isLoadingMore}
+              className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isLoadingMore ? 'در حال بارگذاری...' : 'نمایش محصولات بیشتر'}
+            </button>
+          </div>
+        )}
+        
+        {myProducts.length === 0 && !isLoadingApi && (
+          <p className="text-center text-gray-500 mt-8">محصولی یافت نشد.</p>
+        )}
       </div>
     </div>
   );
