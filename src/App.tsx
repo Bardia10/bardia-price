@@ -244,7 +244,7 @@ const MyProducts = () => {
           <div className="relative flex-1">
             <input
               type="text"
-              placeholder="جستجوی محصول..."
+              placeholder=" جستجوی محصولات..."
               className="w-full p-3 pl-10 pr-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
