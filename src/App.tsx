@@ -1314,6 +1314,16 @@ const LoginPage = () => {
             {loading ? 'در حال ورود...' : 'ورود'}
           </button>
         </form>
+        
+        {/* Registration section */}
+        <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+          <p className="text-sm text-blue-800 text-center mb-2">
+            برای ثبت نام به ایمیل زیر پیام بفرستید:
+          </p>
+          <p className="text-sm font-medium text-blue-900 text-center">
+            farokhsereshtibardia@gmail.com
+          </p>
+        </div>
       </div>
     </div>
   );
