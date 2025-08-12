@@ -1137,7 +1137,7 @@ const ProductDetail = () => {
                   <p className="text-red-600 text-sm text-center py-4">{confirmedCompetitorsError}</p>
                 ) : confirmedCompetitorDetails.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      // ...existing code...
+                      
                       {confirmedCompetitorDetails.map((comp) => {
                         const cheaper = typeof comp.price === 'number' && comp.price > 0 && comp.price < selectedProduct.price;
                         const equal = comp.price === selectedProduct.price;
