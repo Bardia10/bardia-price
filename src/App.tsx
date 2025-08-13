@@ -430,11 +430,13 @@ const ProductDetail = () => {
           const message = (data && (data.message || data.error)) || 'خطا در جستجوی محصولات مشابه';
           throw new Error(message);
         }
+        // New API response: { products: [...], page: number }
         const products = Array.isArray(data?.products) ? data.products.map(mapSearchProduct).filter((p: any) => p.id && p.title) : [];
+        const realPage = typeof data?.page === 'number' ? data.page : 1;
         if (!cancelled) {
           setSearchResults(products);
-          setSimilarPage(1);
-          setHasMoreSimilarPages(products.length === 24);
+          setSimilarPage(realPage + 1); // Next page to request
+          setHasMoreSimilarPages(products.length > 0);
         }
       } catch (e: any) {
         if (!cancelled) setSearchError(e?.message || 'خطای نامشخص در جستجو');
@@ -459,10 +461,9 @@ const ProductDetail = () => {
     setIsLoadingMoreSimilars(true);
     setSearchError(null);
     try {
-      const nextPage = similarPage + 1;
       const encodedTitle = encodeURIComponent(selectedProduct.title.trim());
       const productId = encodeURIComponent(String(selectedProduct.id));
-      const url = `https://bardiabootcampbasalam.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=${nextPage}`;
+      const url = `https://bardiabootcampbasalam.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=${similarPage}`;
       const res = await authorizedFetch(url);
       let data: any = null;
       try { data = await res.json(); } catch {}
@@ -470,10 +471,12 @@ const ProductDetail = () => {
         const message = (data && (data.message || data.error)) || 'خطا در جستجوی محصولات مشابه';
         throw new Error(message);
       }
+      // New API response: { products: [...], page: number }
       const products = Array.isArray(data?.products) ? data.products.map(mapSearchProduct).filter((p: any) => p.id && p.title) : [];
-      setSearchResults(prev => [...prev, ...products]);
-      setSimilarPage(nextPage);
-      setHasMoreSimilarPages(products.length === 24);
+      const realPage = typeof data?.page === 'number' ? data.page : similarPage;
+  setSearchResults(prev => [...prev, ...products]);
+  setSimilarPage(realPage + 1); // Next page to request
+  setHasMoreSimilarPages(products.length > 0);
     } catch (e: any) {
       setSearchError(e?.message || 'خطای نامشخص در جستجو');
     } finally {
