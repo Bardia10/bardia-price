@@ -305,6 +305,8 @@ const MyProducts = () => {
 };
 
 const ProductDetail = () => {
+  // Local search for similar products
+  const [similarSearchTerm, setSimilarSearchTerm] = useState('');
   // State for deleting competitor IDs
   const [deletingCompetitorIds, setDeletingCompetitorIds] = useState<Set<number>>(new Set());
 
@@ -343,13 +345,11 @@ const ProductDetail = () => {
   const [isToolsOpen, setIsToolsOpen] = useState(false);
 
 
-  const [visibleSimilarsCount, setVisibleSimilarsCount] = useState(12);
-  const similarsContainerRef = useRef<HTMLDivElement | null>(null);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  // Pagination for similar products
+  const [similarPage, setSimilarPage] = useState(1);
+  const [hasMoreSimilarPages, setHasMoreSimilarPages] = useState(true);
   const holdTimerRef = useRef<number | null>(null);
-  const [applyHidden, setApplyHidden] = useState(true);
-  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
-  const [isEyeModalOpen, setIsEyeModalOpen] = useState(false);
+  const similarsContainerRef = useRef<HTMLDivElement | null>(null);
 
   // New confirmed competitors (fetched from webhook + Basalam core details)
   type ConfirmedCompetitorDetail = { id: number; title: string; price: number; photo: string; vendorIdentifier: string; productUrl: string };
@@ -363,24 +363,7 @@ const ProductDetail = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   // Modal state for competitors
   const [isCompetitorsModalOpen, setIsCompetitorsModalOpen] = useState(false);
-  // Load hidden list per product from localStorage
-  useEffect(() => {
-    if (!selectedProduct) return;
-    const raw = localStorage.getItem(`hiddenIds_${selectedProduct.id}`);
-    if (raw) {
-      try {
-        const arr: string[] = JSON.parse(raw);
-        setHiddenIds(new Set(arr));
-      } catch {}
-    } else {
-      setHiddenIds(new Set());
-    }
-  }, [selectedProduct]);
-  // Persist when hiddenIds changes
-  useEffect(() => {
-    if (!selectedProduct) return;
-    localStorage.setItem(`hiddenIds_${selectedProduct.id}`, JSON.stringify(Array.from(hiddenIds)));
-  }, [hiddenIds, selectedProduct]);
+  // ...existing code...
 
   useEffect(() => {
     if (!selectedProduct) {
@@ -391,6 +374,7 @@ const ProductDetail = () => {
   // Similar products from real API search
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
+  const [isLoadingMoreSimilars, setIsLoadingMoreSimilars] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
   // Map search API response to internal format
@@ -416,15 +400,18 @@ const ProductDetail = () => {
       description,
       basalamUrl,
       vendorIdentifier, // Include vendor identifier for API calls
+      vendor: p?.vendor || {}, // Pass full vendor object for display
       isCompetitor: false, // Default to false, can be toggled
       createdAt: new Date().toISOString(),
     } as any;
   };
 
-  // Fetch similar products from search API
+  // Fetch similar products from search API (with pagination)
   useEffect(() => {
     if (!selectedProduct || !basalamToken || !selectedProduct.title || !selectedProduct.id) {
       setSearchResults([]);
+      setSimilarPage(1);
+      setHasMoreSimilarPages(true);
       return;
     }
     let cancelled = false;
@@ -446,6 +433,8 @@ const ProductDetail = () => {
         const products = Array.isArray(data?.products) ? data.products.map(mapSearchProduct).filter((p: any) => p.id && p.title) : [];
         if (!cancelled) {
           setSearchResults(products);
+          setSimilarPage(1);
+          setHasMoreSimilarPages(products.length === 24);
         }
       } catch (e: any) {
         if (!cancelled) setSearchError(e?.message || 'خطای نامشخص در جستجو');
@@ -463,6 +452,34 @@ const ProductDetail = () => {
       clearTimeout(timer);
     };
   }, [selectedProduct, basalamToken, authorizedFetch, setGlobalLoading]);
+
+  // Load more similar products
+  const loadMoreSimilars = useCallback(async () => {
+    if (!selectedProduct || !basalamToken || !selectedProduct.title || !selectedProduct.id || isLoadingMoreSimilars || !hasMoreSimilarPages) return;
+    setIsLoadingMoreSimilars(true);
+    setSearchError(null);
+    try {
+      const nextPage = similarPage + 1;
+      const encodedTitle = encodeURIComponent(selectedProduct.title.trim());
+      const productId = encodeURIComponent(String(selectedProduct.id));
+      const url = `https://bardiabootcampbasalam.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=${nextPage}`;
+      const res = await authorizedFetch(url);
+      let data: any = null;
+      try { data = await res.json(); } catch {}
+      if (!res.ok) {
+        const message = (data && (data.message || data.error)) || 'خطا در جستجوی محصولات مشابه';
+        throw new Error(message);
+      }
+      const products = Array.isArray(data?.products) ? data.products.map(mapSearchProduct).filter((p: any) => p.id && p.title) : [];
+      setSearchResults(prev => [...prev, ...products]);
+      setSimilarPage(nextPage);
+      setHasMoreSimilarPages(products.length === 24);
+    } catch (e: any) {
+      setSearchError(e?.message || 'خطای نامشخص در جستجو');
+    } finally {
+      setIsLoadingMoreSimilars(false);
+    }
+  }, [selectedProduct, basalamToken, authorizedFetch, similarPage, isLoadingMoreSimilars, hasMoreSimilarPages]);
 
   // Fresh, simplified competitor fetch: rely solely on webhook + Basalam core; ignore dummy data
   useEffect(() => {
@@ -548,19 +565,7 @@ const ProductDetail = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  // Infinite scroll for similars
-  useEffect(() => {
-    if (!showSimilars) return;
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        setVisibleSimilarsCount((n) => n + 8);
-      }
-    }, { root: null, threshold: 0.1 });
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [showSimilars]);
+  // ...existing code...
 
   const addAsCompetitor = async (similarProduct: any) => {
     if (!selectedProduct?.id || !similarProduct?.id || !similarProduct?.vendorIdentifier) {
@@ -633,19 +638,15 @@ const ProductDetail = () => {
     }
   };
 
+  // Filter similar products by local search term, keep API order
   const sortedSimilars = searchResults
     .filter((p: any) => {
-      if (!filterOnlyCheaper) return true;
-      if (!selectedProduct) return true;
-      const maxAllowed = selectedProduct.price * (1 + percentOverAllowance / 100);
-      return p.price <= maxAllowed;
-    })
-    .filter((p: any) => (applyHidden ? !hiddenIds.has(p.id) : true))
-    .sort((a: any, b: any) => {
-    if (a.price !== b.price) {
-      return a.price - b.price;
-    }
-    return a.isCompetitor === b.isCompetitor ? 0 : a.isCompetitor ? 1 : -1;
+      if (!similarSearchTerm.trim()) return true;
+      const term = similarSearchTerm.trim().toLowerCase();
+      return (
+        p.title?.toLowerCase().includes(term) ||
+        p.description?.toLowerCase().includes(term)
+      );
     });
 
   // Press-and-hold to open lightbox
@@ -859,174 +860,115 @@ const ProductDetail = () => {
 
         {/* Similar products can be toggled; competitors modal is independent */}
         {showSimilars && (
-          <>
-            <div ref={similarsContainerRef} className="bg-white p-4 rounded-xl shadow-md mb-4">
-              <h3 className="text-lg font-bold text-gray-800 mb-3">محصولات مشابه (از جستجوی زنده Basalam)</h3>
-              {isLoadingSearch ? (
-                <LoadingSpinner />
-              ) : searchError ? (
-                <p className="text-red-600 text-sm text-center py-4">{searchError}</p>
-              ) : sortedSimilars.length > 0 ? (
+          <div ref={similarsContainerRef} className="bg-white p-4 rounded-xl shadow-md mb-4">
+            <h3 className="text-lg font-bold text-gray-800 mb-3">محصولات مشابه (از جستجوی زنده Basalam)</h3>
+            {/* Local search box for similar products */}
+            <div className="mb-4 flex items-center gap-2">
+              <input
+                type="text"
+                className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+                placeholder="جستجو در نتایج..."
+                value={similarSearchTerm}
+                onChange={e => setSimilarSearchTerm(e.target.value)}
+              />
+              {similarSearchTerm && (
+                <button
+                  className="px-3 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600"
+                  onClick={() => setSimilarSearchTerm('')}
+                >
+                  پاک کردن
+                </button>
+              )}
+            </div>
+            {isLoadingSearch ? (
+              <LoadingSpinner />
+            ) : searchError ? (
+              <p className="text-red-600 text-sm text-center py-4">{searchError}</p>
+            ) : sortedSimilars.length > 0 ? (
+              <>
                 <div className="grid grid-cols-2 gap-4">
-                  {sortedSimilars.slice(0, visibleSimilarsCount).map((similar: any, idx: number) => {
+                  {sortedSimilars.map((similar: any, idx: number) => {
                     const isLoading = addingCompetitorIds.has(similar.id);
                     const isAdded = similar.isCompetitor;
                     return (
-                    <div
-                      key={similar.id}
-                      onClick={() => !isLoading && !isAdded && addAsCompetitor(similar)}
-                      data-similar-id={similar.id}
-                      className={`relative bg-gray-100 rounded-xl overflow-hidden flex flex-col items-center justify-between p-3 transition-all duration-300 ease-in-out ${
-                        isLoading ? 'cursor-wait opacity-70' : isAdded ? 'cursor-default' : 'cursor-pointer'
-                      } border ${
-                        isAdded ? 'border-2 border-green-500 shadow-[0_0_0_2px_rgba(34,197,94,0.2),0_10px_25px_-5px_rgba(34,197,94,0.5)]' : 
-                        isLoading ? 'border-2 border-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.2),0_10px_25px_-5px_rgba(59,130,246,0.5)]' :
-                        'border-gray-200 hover:shadow-md hover:scale-[1.02]'
-                      }`}
-                    >
-                      <img
-                        src={similar.photo_id}
-                        alt={similar.title}
-                        className="w-28 h-28 object-cover rounded-lg mb-2 border border-gray-200 cursor-zoom-in select-none"
-                        onPointerDown={startHoldToZoom(similar.photo_id, (e) => e.stopPropagation())}
-                        onPointerUp={cancelHoldToZoom}
-                        onPointerLeave={cancelHoldToZoom}
-                        onError={(e: any) => {
-                          e.target.onerror = null;
-                          e.target.src = 'https://placehold.co/120x120/cccccc/333333?text=Sim+Image';
-                        }}
-                      />
-                      <button
-                        className="absolute top-2 left-2 p-1 rounded-full bg-white/90 border hover:bg-white"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(similar.basalamUrl, '_blank');
-                        }}
-                        title="مشاهده در باسلام"
+                      <div
+                        key={similar.id}
+                        onClick={() => !isLoading && !isAdded && addAsCompetitor(similar)}
+                        className={`relative bg-gray-100 rounded-xl overflow-hidden flex flex-col items-center justify-between p-3 transition-all duration-300 ease-in-out ${
+                          isLoading ? 'cursor-wait opacity-70' : isAdded ? 'cursor-default' : 'cursor-pointer'
+                        } border ${
+                          isAdded ? 'border-2 border-green-500 shadow-[0_0_0_2px_rgba(34,197,94,0.2),0_10px_25px_-5px_rgba(34,197,94,0.5)]' : 
+                          isLoading ? 'border-2 border-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.2),0_10px_25px_-5px_rgba(59,130,246,0.5)]' :
+                          'border-gray-200 hover:shadow-md hover:scale-[1.02]'
+                        }`}
                       >
-                        <ExternalLink size={14} />
-                      </button>
-                      <h4 className="text-center text-sm font-semibold text-gray-800 mb-1 line-clamp-2">{similar.title}</h4>
-                      <p className="text-emerald-600 font-bold text-base">{formatPrice(similar.price)}</p>
-                      
-                      {/* Loading or status overlay */}
-                      {isLoading && (
-                        <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                          <div className="flex flex-col items-center gap-2">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                            <span className="text-xs text-blue-600 font-medium">در حال افزودن...</span>
+                        <img
+                          src={similar.photo_id}
+                          alt={similar.title}
+                          className="w-28 h-28 object-cover rounded-lg mb-2 border border-gray-200 cursor-zoom-in select-none"
+                          onPointerDown={startHoldToZoom(similar.photo_id, (e) => e.stopPropagation())}
+                          onPointerUp={cancelHoldToZoom}
+                          onPointerLeave={cancelHoldToZoom}
+                          onError={(e: any) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://placehold.co/120x120/cccccc/333333?text=Sim+Image';
+                          }}
+                        />
+                        <button
+                          className="absolute top-2 left-2 p-1 rounded-full bg-white/90 border hover:bg-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(similar.basalamUrl, '_blank');
+                          }}
+                          title="مشاهده در باسلام"
+                        >
+                          <ExternalLink size={14} />
+                        </button>
+                        <h4 className="text-center text-sm font-semibold text-gray-800 mb-1 line-clamp-2">{similar.title}</h4>
+                        {/* Vendor name below title, lighter color, smaller/thinner font */}
+                        {similar.vendor && similar.vendor.name && (
+                          <div className="text-center text-xs font-normal text-gray-400 mb-1">
+                            {similar.vendor.name}
                           </div>
-                        </div>
-                      )}
-                      
-                      {isAdded && (
-                        <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                          ✓ اضافه شد
-                        </div>
-                      )}
-                      
-
-                    </div>
+                        )}
+                        <p className="text-emerald-600 font-bold text-base">{formatPrice(similar.price)}</p>
+                        {/* Loading or status overlay */}
+                        {isLoading && (
+                          <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                            <div className="flex flex-col items-center gap-2">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                              <span className="text-xs text-blue-600 font-medium">در حال افزودن...</span>
+                            </div>
+                          </div>
+                        )}
+                        {isAdded && (
+                          <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                            ✓ اضافه شد
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
-                  <div ref={sentinelRef} className="col-span-full h-1"></div>
                 </div>
-              ) : (
-                <p className="text-gray-500 text-center py-4">هیچ محصول مشابهی یافت نشد.</p>
-              )}
-            </div>
-
-          </>
+                {hasMoreSimilarPages && (
+                  <div className="flex justify-center py-4">
+                    <button
+                      onClick={loadMoreSimilars}
+                      disabled={isLoadingMoreSimilars}
+                      className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {isLoadingMoreSimilars ? 'در حال بارگذاری...' : 'نمایش نتایج بیشتر'}
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-gray-500 text-center py-4">هیچ محصول مشابهی یافت نشد.</p>
+            )}
+          </div>
         )}
 
-      {/* Sticky Tools (bottom-left) */}
-      <div className="fixed bottom-4 left-4 z-40">
-        <div className="relative">
-          <button
-            onClick={() => setIsToolsOpen((v) => !v)}
-            className="p-3 rounded-full border shadow-lg bg-white hover:bg-gray-50"
-            title="ابزارها"
-          >
-            {isToolsOpen ? <X size={18} /> : <Wrench size={18} />}
-          </button>
-          {isToolsOpen && (
-            <div className="absolute bottom-12 left-0 bg-white border rounded-xl shadow-xl p-2 flex items-center gap-2">
-              {/* Eye -> opens modal with reset/refresh */}
-              <button
-                onClick={() => setIsEyeModalOpen(true)}
-                className="p-2 rounded-full border hover:bg-gray-50"
-                title="چشم"
-              >
-                <Eye size={16} />
-              </button>
-              {/* New badge toggle */}
-              <button
-                onClick={() => setApplyHidden((v) => !v)}
-                className={`p-2 rounded-full border ${applyHidden ? 'bg-emerald-100 text-emerald-700' : 'bg-white'}`}
-                title="نمایش موارد جدید"
-              >
-                <BadgeCheck size={16} />
-              </button>
-
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Eye Modal: reset / refresh */}
-      {isEyeModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4" onClick={() => setIsEyeModalOpen(false)}>
-          <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4 border-b">
-              <h3 className="font-bold text-gray-800">چشم (موارد پنهان)</h3>
-            </div>
-            <div className="p-4 space-y-3 text-sm">
-              <p>چه کاری می‌خواهید انجام دهید؟</p>
-              <button
-                className="w-full px-3 py-2 rounded-md border hover:bg-gray-50"
-                onClick={() => {
-                  // refresh = add newly viewed items
-                  const elements = Array.from((similarsContainerRef.current || document.createElement('div')).querySelectorAll('[data-similar-id]')) as HTMLElement[];
-                  let lastIdx = -1;
-                  for (let i = 0; i < elements.length; i++) {
-                    const rect = elements[i].getBoundingClientRect();
-                    if (rect.top < (window.innerHeight - 80)) lastIdx = i; else break;
-                  }
-                  if (lastIdx >= 0) {
-                    const toHide: string[] = [];
-                    for (let i = 0; i <= lastIdx; i++) {
-                      const id = elements[i].dataset.similarId;
-                      if (id) toHide.push(id);
-                    }
-                    setHiddenIds(prev => new Set([...Array.from(prev), ...toHide]));
-                    setToast({ message: `${toHide.length} مورد اضافه شد`, type: 'info' });
-                    setTimeout(() => setToast(null), 1500);
-                  }
-                  setIsEyeModalOpen(false);
-                }}
-              >
-                بروزرسانی چشم (اضافه کردن موارد دیده‌شده)
-              </button>
-              <button
-                className="w-full px-3 py-2 rounded-md border hover:bg-red-50 text-red-700 border-red-200"
-                onClick={() => {
-                  if (confirm('لیست پنهان‌سازی ریست شود؟')) {
-                    setHiddenIds(new Set());
-                    setIsEyeModalOpen(false);
-                    setToast({ message: 'ریست شد', type: 'info' });
-                    setTimeout(() => setToast(null), 1500);
-                  }
-                }}
-              >
-                ریست چشم
-              </button>
-            </div>
-            <div className="p-4 border-t text-right">
-              <button className="px-3 py-2 text-sm rounded-md border" onClick={() => setIsEyeModalOpen(false)}>بستن</button>
-            </div>
-          </div>
-        </div>
-      )}
+  {/* Removed advanced visibility tools and eye modal */}
 
         {/* Old competitors modal removed in favor of the live section above */}
 
