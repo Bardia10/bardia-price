@@ -790,39 +790,73 @@ const ProductDetail = () => {
                   const lowest = priced.length > 0 ? priced.reduce((min, c) => (c.price < min.price ? c : min), priced[0]) : null;
                   const average = priced.length > 0 ? Math.round(priced.reduce((sum, c) => sum + c.price, 0) / priced.length) : 0;
                   const diff = lowest ? (selectedProduct.price - lowest.price) : 0;
-                  const badgeIsCheaper = lowest ? selectedProduct.price < lowest.price : false;
-                  const badgePercent = lowest ? (
-                    badgeIsCheaper
-                      ? Math.round(Math.abs(diff) / selectedProduct.price * 100)
-                      : Math.round(Math.abs(diff) / lowest.price * 100)
-                  ) : 0;
-                  return (
-                    <div className="mb-3 space-y-1">
-                      {lowest && (
-                        <div className="flex flex-wrap items-center gap-2 text-sm">
-                          <span className="font-semibold text-gray-800">کمترین قیمت رقیب:</span>
-                          <a
-                            href={lowest.productUrl || `https://basalam.com/product/${lowest.id}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-blue-600 hover:underline font-semibold"
-                          >
-                            {formatPrice(lowest.price)}
-                          </a>
-                          <span className={`px-2 py-0.5 rounded text-xs border ${badgeIsCheaper ? 'bg-green-50 text-green-700 border-green-200' : diff === 0 ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                            {diff === 0 ? '=' : badgeIsCheaper ? `−${badgePercent}% ارزان‌تر` : `+${badgePercent}% گران‌تر`}
-                          </span>
-                          <span className="text-gray-600 ml-1">(شما: {formatPrice(selectedProduct.price)})</span>
-                        </div>
-                      )}
-                      {average > 0 && (
-                        <div className="text-sm text-gray-700">
-                          <span className="font-semibold">میانگین قیمت رقبا:</span> {formatPrice(average)}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
+
+                    // Lowest competitor comparison (corrected logic)
+                    let lowestBadgeText = '';
+                    let lowestBadgeClass = '';
+                    if (lowest) {
+                      if (lowest.price < selectedProduct.price) {
+                        // Competitor is cheaper
+                        lowestBadgeText = `-${Math.round((selectedProduct.price - lowest.price) / lowest.price * 100)}% ارزان‌تر`;
+                        lowestBadgeClass = 'bg-red-50 text-red-700 border-red-200';
+                      } else if (lowest.price > selectedProduct.price) {
+                        // Competitor is more expensive
+                        lowestBadgeText = `+${Math.round((lowest.price - selectedProduct.price) / selectedProduct.price * 100)}% گران‌تر`;
+                        lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
+                      } else {
+                        lowestBadgeText = '=';
+                        lowestBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+                      }
+                    }
+
+                    // Average competitor comparison (corrected logic)
+                    let avgBadgeText = '';
+                    let avgBadgeClass = '';
+                    if (average > 0) {
+                      if (average < selectedProduct.price) {
+                        // Competitors are cheaper on average
+                        avgBadgeText = `-${Math.round((selectedProduct.price - average) / average * 100)}% ارزان‌تر   `;
+                        avgBadgeClass = 'bg-red-50 text-red-700 border-red-200';
+                      } else if (average > selectedProduct.price) {
+                        // Competitors are more expensive on average
+                        avgBadgeText = `+${Math.round((average - selectedProduct.price) / selectedProduct.price * 100)}% گران‌تر   `;
+                        avgBadgeClass = 'bg-green-50 text-green-700 border-green-200';
+                      } else {
+                        avgBadgeText = '=';
+                        avgBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+                      }
+                    }
+
+                    return (
+                      <div className="mb-3 space-y-1">
+                        {lowest && (
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
+                            <span className="font-semibold text-gray-800">کمترین قیمت رقیب:</span>
+                            <a
+                              href={lowest.productUrl || `https://basalam.com/product/${lowest.id}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:underline font-semibold"
+                            >
+                              {formatPrice(lowest.price)}
+                            </a>
+                            <span className={`px-2 py-0.5 rounded text-xs border ${lowestBadgeClass}`}>
+                              {lowestBadgeText}
+                            </span>
+                            <span className="text-gray-600 ml-1">(شما: {formatPrice(selectedProduct.price)})</span>
+                          </div>
+                        )}
+                        {average > 0 && (
+                          <div className="flex flex-wrap items-center gap-2 text-sm mt-1">
+                            <span className="font-semibold">میانگین قیمت رقبا:</span> {formatPrice(average)}
+                            <span className={`px-2 py-0.5 rounded text-xs border ${avgBadgeClass}`}>
+                              {avgBadgeText}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                 {/* Edit Now Button */}
                 <div className="mt-4 mb-3">
