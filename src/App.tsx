@@ -60,13 +60,13 @@ const Modal = ({ isOpen, onClose, title, message, children }: any) => {
 
 
 const Header = ({ title, onBack, compact = false }: any) => (
-  <header className={`sticky top-0 bg-white shadow-sm ${compact ? 'p-2' : 'p-4'} flex items-center justify-between z-40 rounded-b-xl`}>
+  <header className={`sticky top-0 bg-white shadow-sm ${compact ? 'p-2' : 'p-4'} flex items-center relative z-40 rounded-b-xl`}>
     {onBack && (
-      <button onClick={onBack} className="text-gray-600 hover:text-emerald-600 transition-colors duration-200">
+      <button onClick={onBack} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-emerald-600 transition-colors duration-200">
         <ChevronLeft size={24} />
       </button>
     )}
-    <h1 className="text-lg font-bold text-gray-800 mx-auto">{title}</h1>
+    <h1 className="w-full text-lg font-bold text-gray-800 text-center">{title}</h1>
     <div className="w-6"></div>
   </header>
 );

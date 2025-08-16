@@ -207,12 +207,14 @@ const DevTools = () => {
 // Header component with back button and title
 const Header = ({ title, onBack }) => (
   <header className="sticky top-0 bg-white shadow-sm p-4 flex items-center justify-between z-40 rounded-b-xl">
-    {onBack && (
-      <button onClick={onBack} className="text-gray-600 hover:text-emerald-600 transition-colors duration-200">
-        <ChevronLeft size={24} />
-      </button>
-    )}
-    <h1 className="text-lg font-bold text-gray-800 mx-auto">{title}</h1>
+    <div className="flex items-center flex-1">
+      {onBack && (
+        <button onClick={onBack} className="text-gray-600 hover:text-emerald-600 transition-colors duration-200 mr-2">
+          <ChevronLeft size={24} />
+        </button>
+      )}
+      <h1 className="text-lg font-bold text-gray-800 mx-auto">{title}</h1>
+    </div>
     <div className="w-6"></div> {/* Placeholder for alignment */}
   </header>
 );
