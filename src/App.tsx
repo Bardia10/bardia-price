@@ -310,26 +310,6 @@ const ProductDetail = () => {
   // State for deleting competitor IDs
   const [deletingCompetitorIds, setDeletingCompetitorIds] = useState<Set<number>>(new Set());
 
-  // Handler for deleting competitor
-  const handleDeleteCompetitor = async (competitorId: number) => {
-    if (deletingCompetitorIds.has(competitorId)) return;
-    setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
-    try {
-      await authorizedFetch(
-        `https://bardia1234far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${competitorId}`,
-        { method: 'DELETE' }
-      );
-      setRefreshTrigger((v) => v + 1);
-    } catch (e) {
-      alert('خطا در حذف رقیب.');
-    } finally {
-      setDeletingCompetitorIds(prev => {
-        const next = new Set(prev);
-        next.delete(competitorId);
-        return next;
-      });
-    }
-  };
   const { navigate, selectedProduct, authorizedFetch, basalamToken, setGlobalLoading, lastNavigation } = useContext(AppContext);
   // Track where user came from (sessionStorage fallback)
   const [fromSection, setFromSection] = useState<string | null>(null);
@@ -342,6 +322,44 @@ const ProductDetail = () => {
       if (stored) setFromSection(stored);
     }
   }, [lastNavigation]);
+
+  // --- New: Product details state ---
+  const [productDetail, setProductDetail] = useState<any>(null);
+  const [isLoadingProductDetail, setIsLoadingProductDetail] = useState(false);
+  const [productDetailError, setProductDetailError] = useState<string | null>(null);
+
+  // Fetch product details from API
+  useEffect(() => {
+    if (!selectedProduct?.id || !basalamToken) {
+      setProductDetail(null);
+      return;
+    }
+    let cancelled = false;
+    const fetchDetail = async () => {
+      setIsLoadingProductDetail(true);
+      setProductDetailError(null);
+      try {
+        const url = `https://n8nstudent.dotavvab.com/webhook/product?id=${selectedProduct.id}`;
+        const res = await authorizedFetch(url, {
+          headers: {
+            Authorization: `Bearer ${basalamToken}`,
+          },
+        });
+        let data = null;
+        try { data = await res.json(); } catch {}
+        if (!res.ok) throw new Error((data && (data.message || data.error)) || 'خطا در دریافت اطلاعات محصول');
+        if (!cancelled) setProductDetail(data);
+      } catch (e: any) {
+        if (!cancelled) setProductDetailError(e?.message || 'خطای نامشخص');
+      } finally {
+        if (!cancelled) setIsLoadingProductDetail(false);
+      }
+    };
+    fetchDetail();
+    return () => { cancelled = true; };
+  }, [selectedProduct?.id, basalamToken, authorizedFetch]);
+
+  // --- Existing states ---
   const [showOriginalProductFloating, setShowOriginalProductFloating] = useState(false);
   const [isFloatingExpanded, setIsFloatingExpanded] = useState(false);
   const [showSimilars, setShowSimilars] = useState(false);
@@ -354,7 +372,6 @@ const ProductDetail = () => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [tempPercent, setTempPercent] = useState<number>(percentOverAllowance);
   const [isToolsOpen, setIsToolsOpen] = useState(false);
-
 
   // Pagination for similar products
   const [similarPage, setSimilarPage] = useState(1);
@@ -375,6 +392,27 @@ const ProductDetail = () => {
   // Modal state for competitors
   const [isCompetitorsModalOpen, setIsCompetitorsModalOpen] = useState(false);
   // ...existing code...
+
+  // Handler for deleting competitor
+  const handleDeleteCompetitor = async (competitorId: number) => {
+    if (deletingCompetitorIds.has(competitorId)) return;
+    setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
+    try {
+      await authorizedFetch(
+        `https://bardia1234far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${competitorId}`,
+        { method: 'DELETE' }
+      );
+      setRefreshTrigger((v) => v + 1);
+    } catch (e) {
+      alert('خطا در حذف رقیب.');
+    } finally {
+      setDeletingCompetitorIds(prev => {
+        const next = new Set(prev);
+        next.delete(competitorId);
+        return next;
+      });
+    }
+  };
 
   useEffect(() => {
     if (!selectedProduct) {
@@ -682,7 +720,14 @@ const ProductDetail = () => {
     }
   };
 
-  if (!selectedProduct) {
+  // Show loading spinner if product detail is loading or not available
+  if (!selectedProduct || isLoadingProductDetail) {
+    return <LoadingSpinner />;
+  }
+  if (productDetailError) {
+    return <div className="min-h-screen flex items-center justify-center text-red-600">{productDetailError}</div>;
+  }
+  if (!productDetail) {
     return <LoadingSpinner />;
   }
 
@@ -713,13 +758,13 @@ const ProductDetail = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img
-                src={selectedProduct.photo_id}
-                alt={selectedProduct.title}
+                src={productDetail.photo?.md || productDetail.photo?.original || productDetail.photo?.sm || productDetail.photo?.xs || ''}
+                alt={productDetail.title}
                 className="w-16 h-16 object-cover rounded-md"
               />
               <div>
-                <h3 className="font-semibold text-gray-800 text-sm md:text-base line-clamp-1">{selectedProduct.title}</h3>
-                <p className="text-emerald-600 font-bold text-sm md:text-md">{formatPrice(selectedProduct.price)}</p>
+                <h3 className="font-semibold text-gray-800 text-sm md:text-base line-clamp-1">{productDetail.title}</h3>
+                <p className="text-emerald-600 font-bold text-sm md:text-md">{formatPrice(productDetail.price)}</p>
               </div>
             </div>
             <span className="text-blue-600 text-xs select-none">{isFloatingExpanded ? 'نمایش کمتر' : 'مشاهده کامل'}</span>
@@ -727,18 +772,21 @@ const ProductDetail = () => {
           {isFloatingExpanded && (
             <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
               <div className="col-span-2">
-                <p className="text-gray-700">{selectedProduct.description}</p>
+                {/* No description in new API, so show id and price */}
+                <p className="text-gray-700">شناسه محصول: {productDetail.id}</p>
+                <p className="text-gray-700">قیمت: {formatPrice(productDetail.price)}</p>
               </div>
               <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                {selectedProduct.photos.map((p: string, i: number) => (
+                {/* Show all photos from productDetail.photos */}
+                {Array.isArray(productDetail.photos) && productDetail.photos.map((p: any, i: number) => (
                   <img
                     key={i}
-                    src={p}
+                    src={p.md || p.original || p.sm || p.xs || ''}
                     alt={String(i)}
                     className="w-24 h-20 object-cover rounded-md border cursor-zoom-in"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setLightboxSrc(p);
+                      setLightboxSrc(p.md || p.original || p.sm || p.xs || '');
                     }}
                   />
                 ))}
@@ -758,13 +806,14 @@ const ProductDetail = () => {
           </div>
         )}
         <div className="flex flex-nowrap overflow-x-auto gap-2 p-2 bg-white rounded-xl shadow-md mb-4 scrollbar-hide">
-          {selectedProduct.photos.map((photo: string, index: number) => (
+          {/* Show all photos from productDetail.photos */}
+          {Array.isArray(productDetail.photos) && productDetail.photos.map((photo: any, index: number) => (
             <img
               key={index}
-              src={photo}
-              alt={`${selectedProduct.title} image ${index + 1}`}
+              src={photo.md || photo.original || photo.sm || photo.xs || ''}
+              alt={`${productDetail.title} image ${index + 1}`}
               className="flex-shrink-0 w-40 h-32 object-cover rounded-lg shadow-sm border border-gray-100 cursor-zoom-in select-none"
-              onPointerDown={startHoldToZoom(photo)}
+              onPointerDown={startHoldToZoom(photo.md || photo.original || photo.sm || photo.xs || '')}
               onPointerUp={cancelHoldToZoom}
               onPointerLeave={cancelHoldToZoom}
               onError={(e: any) => {
