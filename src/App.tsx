@@ -806,7 +806,22 @@ const ProductDetail = () => {
           </div>
         )}
         <div className="flex flex-nowrap overflow-x-auto gap-2 p-2 bg-white rounded-xl shadow-md mb-4 scrollbar-hide">
-          {/* Show all photos from productDetail.photos */}
+          {/* Show main photo first, then all secondary photos */}
+          {productDetail.photo && (
+            <img
+              key="main"
+              src={productDetail.photo.md || productDetail.photo.original || productDetail.photo.sm || productDetail.photo.xs || ''}
+              alt={`${productDetail.title} main`}
+              className="flex-shrink-0 w-40 h-32 object-cover rounded-lg shadow-sm border border-gray-100 cursor-zoom-in select-none"
+              onPointerDown={startHoldToZoom(productDetail.photo.md || productDetail.photo.original || productDetail.photo.sm || productDetail.photo.xs || '')}
+              onPointerUp={cancelHoldToZoom}
+              onPointerLeave={cancelHoldToZoom}
+              onError={(e: any) => {
+                e.target.onerror = null;
+                e.target.src = 'https://placehold.co/150x100/cccccc/333333?text=No+Image';
+              }}
+            />
+          )}
           {Array.isArray(productDetail.photos) && productDetail.photos.map((photo: any, index: number) => (
             <img
               key={index}
