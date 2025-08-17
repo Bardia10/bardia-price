@@ -772,7 +772,6 @@ const ProductDetail = () => {
           {isFloatingExpanded && (
             <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
               <div className="col-span-2">
-                {/* No description in new API, so show id and price */}
                 <p className="text-gray-700">شناسه محصول: {productDetail.id}</p>
                 <p className="text-gray-700">قیمت: {formatPrice(productDetail.price)}</p>
               </div>
@@ -847,9 +846,8 @@ const ProductDetail = () => {
         )}
 
         <div className="bg-white p-4 rounded-xl shadow-md mb-4">
-          <h2 className="text-xl font-bold text-gray-800 mb-2">{selectedProduct.title}</h2>
-          <p className="text-emerald-600 text-2xl font-bold mb-3">{formatPrice(selectedProduct.price)}</p>
-          <p className="text-gray-700 text-sm leading-relaxed mb-4">{selectedProduct.description}</p>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">{productDetail.title}</h2>
+          <p className="text-emerald-600 text-2xl font-bold mb-3">{formatPrice(productDetail.price)}</p>
 
           {/* Fresh competitors section - from live APIs only */}
           <div className="border-t border-gray-200 pt-3 mt-3">
