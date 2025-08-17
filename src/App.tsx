@@ -226,7 +226,7 @@ const MyProducts = () => {
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
-    navigate('product-detail');
+    navigate('product-detail', { from: 'my-products' });
   };
 
   const handleBasalamPageClick = (e: React.MouseEvent<HTMLButtonElement>, url: string) => {
@@ -330,7 +330,18 @@ const ProductDetail = () => {
       });
     }
   };
-  const { navigate, selectedProduct, authorizedFetch, basalamToken, setGlobalLoading } = useContext(AppContext);
+  const { navigate, selectedProduct, authorizedFetch, basalamToken, setGlobalLoading, lastNavigation } = useContext(AppContext);
+  // Track where user came from (sessionStorage fallback)
+  const [fromSection, setFromSection] = useState<string | null>(null);
+  useEffect(() => {
+    if (lastNavigation && lastNavigation.from) {
+      setFromSection(lastNavigation.from);
+      sessionStorage.setItem('productDetailFrom', lastNavigation.from);
+    } else {
+      const stored = sessionStorage.getItem('productDetailFrom');
+      if (stored) setFromSection(stored);
+    }
+  }, [lastNavigation]);
   const [showOriginalProductFloating, setShowOriginalProductFloating] = useState(false);
   const [isFloatingExpanded, setIsFloatingExpanded] = useState(false);
   const [showSimilars, setShowSimilars] = useState(false);
@@ -681,7 +692,13 @@ const ProductDetail = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header title="جزئیات محصول" compact />
       <button
-        onClick={() => navigate('my-products')}
+        onClick={() => {
+          if (fromSection === 'not-best-price') {
+            navigate('not-best-price');
+          } else {
+            navigate('my-products');
+          }
+        }}
         className="fixed top-2 left-2 z-40 bg-white/90 border border-gray-200 p-2 rounded-full shadow hover:bg-white"
         aria-label="بازگشت"
       >
@@ -1234,7 +1251,7 @@ const ExpensiveProductsPage = () => {
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
-    navigate('product-detail');
+    navigate('product-detail', { from: 'not-best-price' });
   };
 
   const handleBasalamPageClick = (e: React.MouseEvent<HTMLButtonElement>, url: string) => {
@@ -1273,6 +1290,7 @@ const App = () => {
   );
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [globalLoading, setGlobalLoading] = useState<boolean>(false);
+  const [lastNavigation, setLastNavigation] = useState<any>(null);
 
 
   useEffect(() => {
@@ -1283,8 +1301,9 @@ const App = () => {
     }
   }, [basalamToken]);
 
-  const navigate = useCallback((page: typeof currentPage) => {
+  const navigate = useCallback((page: typeof currentPage, state?: any) => {
     setCurrentPage(page);
+    setLastNavigation(state || null);
     if (page === 'my-products') {
       setSelectedProduct(null);
     }
@@ -1327,14 +1346,15 @@ const App = () => {
   }, [basalamToken]);
 
   const contextValue = useMemo(() => ({
-        navigate,
-        selectedProduct,
-        setSelectedProduct,
-        basalamToken,
-        setBasalamToken,
-        authorizedFetch,
-        setGlobalLoading,
-  }), [navigate, selectedProduct, basalamToken, authorizedFetch]);
+    navigate,
+    selectedProduct,
+    setSelectedProduct,
+    basalamToken,
+    setBasalamToken,
+    authorizedFetch,
+    setGlobalLoading,
+    lastNavigation,
+  }), [navigate, selectedProduct, basalamToken, authorizedFetch, lastNavigation]);
 
   return (
     <AppContext.Provider value={contextValue}>
