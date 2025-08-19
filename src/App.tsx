@@ -362,7 +362,7 @@ const ProductDetail = () => {
   // --- Existing states ---
   const [showOriginalProductFloating, setShowOriginalProductFloating] = useState(false);
   const [isFloatingExpanded, setIsFloatingExpanded] = useState(false);
-  const [showSimilars, setShowSimilars] = useState(false);
+  const [showSimilars, setShowSimilars] = useState(true)
   const [filterOnlyCheaper, setFilterOnlyCheaper] = useState(false);
   const [percentOverAllowance, setPercentOverAllowance] = useState(0); // 0..50
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
@@ -425,6 +425,7 @@ const ProductDetail = () => {
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   const [isLoadingMoreSimilars, setIsLoadingMoreSimilars] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [hasFetchedSimilars, setHasFetchedSimilars] = useState(false);
 
   // Map search API response to internal format
   const mapSearchProduct = (p: any) => {
@@ -456,53 +457,41 @@ const ProductDetail = () => {
   };
 
   // Fetch similar products from search API (with pagination)
-  useEffect(() => {
+  const fetchSimilarProducts = useCallback(async () => {
     if (!selectedProduct || !basalamToken || !selectedProduct.title || !selectedProduct.id) {
       setSearchResults([]);
       setSimilarPage(1);
       setHasMoreSimilarPages(true);
       return;
     }
-    let cancelled = false;
-    const fetchSimilarProducts = async () => {
-      setIsLoadingSearch(true);
-      setGlobalLoading(true);
-      setSearchError(null);
-      try {
-        const encodedTitle = encodeURIComponent(selectedProduct.title.trim());
-        const productId = encodeURIComponent(String(selectedProduct.id));
-        const url = `https://bardia1234far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=1`;
-        const res = await authorizedFetch(url);
-        let data: any = null;
-        try { data = await res.json(); } catch {}
-        if (!res.ok) {
-          const message = (data && (data.message || data.error)) || 'خطا در جستجوی محصولات مشابه';
-          throw new Error(message);
-        }
-        // New API response: { products: [...], page: number }
-        const products = Array.isArray(data?.products) ? data.products.map(mapSearchProduct).filter((p: any) => p.id && p.title) : [];
-        const realPage = typeof data?.page === 'number' ? data.page : 1;
-        if (!cancelled) {
-          setSearchResults(products);
-          setSimilarPage(realPage + 1); // Next page to request
-          setHasMoreSimilarPages(products.length > 0);
-        }
-      } catch (e: any) {
-        if (!cancelled) setSearchError(e?.message || 'خطای نامشخص در جستجو');
-      } finally {
-        if (!cancelled) {
-          setIsLoadingSearch(false);
-          setGlobalLoading(false);
-        }
+    setIsLoadingSearch(true);
+    setGlobalLoading(true);
+    setSearchError(null);
+    try {
+      const encodedTitle = encodeURIComponent(selectedProduct.title.trim());
+      const productId = encodeURIComponent(String(selectedProduct.id));
+      const url = `https://bardia1234far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=1`;
+      const res = await authorizedFetch(url);
+      let data: any = null;
+      try { data = await res.json(); } catch {}
+      if (!res.ok) {
+        const message = (data && (data.message || data.error)) || 'خطا در جستجوی محصولات مشابه';
+        throw new Error(message);
       }
-    };
-    // Add a small delay to avoid too many requests on rapid navigation
-    const timer = setTimeout(fetchSimilarProducts, 300);
-    return () => { 
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [selectedProduct, basalamToken, authorizedFetch, setGlobalLoading]);
+      // New API response: { products: [...], page: number }
+      const products = Array.isArray(data?.products) ? data.products.map(mapSearchProduct).filter((p: any) => p.id && p.title) : [];
+      const realPage = typeof data?.page === 'number' ? data.page : 1;
+      setSearchResults(products);
+      setSimilarPage(realPage + 1); // Next page to request
+      setHasMoreSimilarPages(products.length > 0);
+      setHasFetchedSimilars(true);
+    } catch (e: any) {
+      setSearchError(e?.message || 'خطای نامشخص در جستجو');
+    } finally {
+      setIsLoadingSearch(false);
+      setGlobalLoading(false);
+    }
+  }, [selectedProduct, basalamToken, authorizedFetch, setGlobalLoading, mapSearchProduct]);
 
   // Load more similar products
   const loadMoreSimilars = useCallback(async () => {
@@ -523,15 +512,15 @@ const ProductDetail = () => {
       // New API response: { products: [...], page: number }
       const products = Array.isArray(data?.products) ? data.products.map(mapSearchProduct).filter((p: any) => p.id && p.title) : [];
       const realPage = typeof data?.page === 'number' ? data.page : similarPage;
-  setSearchResults(prev => [...prev, ...products]);
-  setSimilarPage(realPage + 1); // Next page to request
-  setHasMoreSimilarPages(products.length > 0);
+      setSearchResults(prev => [...prev, ...products]);
+      setSimilarPage(realPage + 1); // Next page to request
+      setHasMoreSimilarPages(products.length > 0);
     } catch (e: any) {
       setSearchError(e?.message || 'خطای نامشخص در جستجو');
     } finally {
       setIsLoadingMoreSimilars(false);
     }
-  }, [selectedProduct, basalamToken, authorizedFetch, similarPage, isLoadingMoreSimilars, hasMoreSimilarPages]);
+  }, [selectedProduct, basalamToken, authorizedFetch, similarPage, isLoadingMoreSimilars, hasMoreSimilarPages, mapSearchProduct]);
 
   // Fresh, simplified competitor fetch: rely solely on webhook + Basalam core; ignore dummy data
   useEffect(() => {
@@ -965,164 +954,177 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 mb-6">
+        {/* <div className="flex items-center justify-between gap-3 mb-6">
           <button onClick={() => setShowSimilars((v) => !v)} className="flex-1 flex items-center justify-center p-4 bg-emerald-600 text-white rounded-xl shadow-md hover:bg-emerald-700 transition duration-300 ease-in-out">
             <Sparkles className="ml-3" />
             <span className="text-lg font-semibold">{showSimilars ? 'پنهان کردن نتایج' : 'جست و جوی هوشمند'}</span>
           </button>
-          {/* Empty to keep layout; tools moved to sticky corner */}
           <div />
-        </div>
+        </div>*/}
 
         {/* Similar products can be toggled; competitors modal is independent */}
         {showSimilars && (
           <div ref={similarsContainerRef} className="bg-white p-4 rounded-xl shadow-md mb-4">
             <h3 className="text-lg font-bold text-gray-800 mb-3">محصولات مشابه (از جستجوی زنده Basalam)</h3>
             {/* Local search box for similar products */}
-            <div className="mb-4 flex items-center gap-2">
-              <input
-                type="text"
-                className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
-                placeholder="جستجو در نتایج..."
-                value={similarSearchTerm}
-                onChange={e => setSimilarSearchTerm(e.target.value)}
-              />
-              {similarSearchTerm && (
-                <button
-                  className="px-3 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600"
-                  onClick={() => setSimilarSearchTerm('')}
-                >
-                  پاک کردن
-                </button>
-              )}
-            </div>
-            {isLoadingSearch ? (
-              <LoadingSpinner />
-            ) : searchError ? (
-              <p className="text-red-600 text-sm text-center py-4">{searchError}</p>
-            ) : sortedSimilars.length > 0 ? (
+            {hasFetchedSimilars ? (
               <>
-                <div className="grid grid-cols-2 gap-4">
-                  {sortedSimilars.map((similar: any, idx: number) => {
-                    const isLoading = addingCompetitorIds.has(similar.id);
-                    const isAdded = similar.isCompetitor;
-                    const isDeleting = deletingCompetitorIds.has(Number(similar.id));
-                    return (
-                      <div
-                        key={similar.id}
-                        className={`relative bg-gray-100 rounded-xl overflow-hidden flex flex-col items-center justify-between p-3 transition-all duration-300 ease-in-out ${
-                          isLoading ? 'cursor-wait opacity-70' : isAdded ? 'cursor-default' : 'cursor-pointer'
-                        } border ${
-                          isAdded ? 'border-2 border-green-500 shadow-[0_0_0_2px_rgba(34,197,94,0.2),0_10px_25px_-5px_rgba(34,197,94,0.5)]' : 
-                          isLoading ? 'border-2 border-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.2),0_10px_25px_-5px_rgba(59,130,246,0.5)]' :
-                          'border-gray-200 hover:shadow-md hover:scale-[1.02]'
-                        }`}
-                        onClick={() => !isLoading && !isAdded && addAsCompetitor(similar)}
-                      >
-                        <img
-                          src={similar.photo_id}
-                          alt={similar.title}
-                          className="w-28 h-28 object-cover rounded-lg mb-2 border border-gray-200 cursor-zoom-in select-none"
-                          onPointerDown={startHoldToZoom(similar.photo_id, (e) => e.stopPropagation())}
-                          onPointerUp={cancelHoldToZoom}
-                          onPointerLeave={cancelHoldToZoom}
-                          onError={(e: any) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://placehold.co/120x120/cccccc/333333?text=Sim+Image';
-                          }}
-                        />
-                        <button
-                          className="absolute top-2 left-2 p-1 rounded-full bg-white/90 border hover:bg-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(similar.basalamUrl, '_blank');
-                          }}
-                          title="مشاهده در باسلام"
-                        >
-                          <ExternalLink size={14} />
-                        </button>
-                        <h4 className="text-center text-sm font-semibold text-gray-800 mb-1 line-clamp-2">{similar.title}</h4>
-                        {/* Vendor name below title, lighter color, smaller/thinner font */}
-                        {similar.vendor && similar.vendor.name && (
-                          <div className="text-center text-xs font-normal text-gray-400 mb-1">
-                            {similar.vendor.name}
-                          </div>
-                        )}
-                        <p className="text-emerald-600 font-bold text-base">{formatPrice(similar.price)}</p>
-                        {/* Loading or status overlay */}
-                        {isLoading && (
-                          <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                            <div className="flex flex-col items-center gap-2">
-                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                              <span className="text-xs text-blue-600 font-medium">در حال افزودن...</span>
-                            </div>
-                          </div>
-                        )}
-                        {isAdded && !isDeleting && (
-                          <button
-                            className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center hover:bg-red-600"
-                            title="حذف از رقبا"
-                            disabled={isDeleting}
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (isDeleting) return;
-                              setDeletingCompetitorIds(prev => new Set(prev).add(Number(similar.id)));
-                              try {
-                                await authorizedFetch(
-                                  `https://bardia1234far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${similar.id}`,
-                                  { method: 'DELETE' }
-                                );
-                                setSearchResults(prevResults =>
-                                  prevResults.map((s: any) =>
-                                    s.id === similar.id ? { ...s, isCompetitor: false } : s
-                                  )
-                                );
-                                setToast({ message: `رقیب "${similar.title}" حذف شد`, type: 'success' });
-                                setTimeout(() => setToast(null), 2000);
-                                setRefreshTrigger((v) => v + 1);
-                              } catch (e) {
-                                setToast({ message: 'خطا در حذف رقیب', type: 'error' });
-                                setTimeout(() => setToast(null), 2000);
-                              } finally {
-                                setDeletingCompetitorIds(prev => {
-                                  const next = new Set(prev);
-                                  next.delete(Number(similar.id));
-                                  return next;
-                                });
-                              }
-                            }}
-                          >
-                            <X size={14} />
-                          </button>
-                        )}
-                        {isAdded && isDeleting && (
-                          <div className="absolute top-2 right-2 bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-medium flex items-center">
-                            <span>در حال حذف...</span>
-                          </div>
-                        )}
-                        {isAdded && !isDeleting && (
-                          <div className="absolute top-8 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                            ✓ اضافه شد
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {hasMoreSimilarPages && (
-                  <div className="flex justify-center py-4">
+                <div className="mb-4 flex items-center gap-2">
+                  <input
+                    type="text"
+                    className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+                    placeholder="جستجو در نتایج..."
+                    value={similarSearchTerm}
+                    onChange={e => setSimilarSearchTerm(e.target.value)}
+                  />
+                  {similarSearchTerm && (
                     <button
-                      onClick={loadMoreSimilars}
-                      disabled={isLoadingMoreSimilars}
-                      className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="px-3 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600"
+                      onClick={() => setSimilarSearchTerm('')}
                     >
-                      {isLoadingMoreSimilars ? 'در حال بارگذاری...' : 'نمایش نتایج بیشتر'}
+                      پاک کردن
                     </button>
-                  </div>
+                  )}
+                </div>
+                {isLoadingSearch ? (
+                  <LoadingSpinner />
+                ) : searchError ? (
+                  <p className="text-red-600 text-sm text-center py-4">{searchError}</p>
+                ) : sortedSimilars.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      {sortedSimilars.map((similar: any, idx: number) => {
+                        const isLoading = addingCompetitorIds.has(similar.id);
+                        const isAdded = similar.isCompetitor;
+                        const isDeleting = deletingCompetitorIds.has(Number(similar.id));
+                        return (
+                          <div
+                            key={similar.id}
+                            className={`relative bg-gray-100 rounded-xl overflow-hidden flex flex-col items-center justify-between p-3 transition-all duration-300 ease-in-out ${
+                              isLoading ? 'cursor-wait opacity-70' : isAdded ? 'cursor-default' : 'cursor-pointer'
+                            } border ${
+                              isAdded ? 'border-2 border-green-500 shadow-[0_0_0_2px_rgba(34,197,94,0.2),0_10px_25px_-5px_rgba(34,197,94,0.5)]' : 
+                                isLoading ? 'border-2 border-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.2),0_10px_25px_-5px_rgba(59,130,246,0.5)]' :
+                                'border-gray-200 hover:shadow-md hover:scale-[1.02]'
+                            }`}
+                            onClick={() => !isLoading && !isAdded && addAsCompetitor(similar)}
+                          >
+                            <img
+                              src={similar.photo_id}
+                              alt={similar.title}
+                              className="w-28 h-28 object-cover rounded-lg mb-2 border border-gray-200 cursor-zoom-in select-none"
+                              onPointerDown={startHoldToZoom(similar.photo_id, (e) => e.stopPropagation())}
+                              onPointerUp={cancelHoldToZoom}
+                              onPointerLeave={cancelHoldToZoom}
+                              onError={(e: any) => {
+                                e.target.onerror = null;
+                                e.target.src = 'https://placehold.co/120x120/cccccc/333333?text=Sim+Image';
+                              }}
+                            />
+                            <button
+                              className="absolute top-2 left-2 p-1 rounded-full bg-white/90 border hover:bg-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(similar.basalamUrl, '_blank');
+                              }}
+                              title="مشاهده در باسلام"
+                            >
+                              <ExternalLink size={14} />
+                            </button>
+                            <h4 className="text-center text-sm font-semibold text-gray-800 mb-1 line-clamp-2">{similar.title}</h4>
+                            {/* Vendor name below title, lighter color, smaller/thinner font */}
+                            {similar.vendor && similar.vendor.name && (
+                              <div className="text-center text-xs font-normal text-gray-400 mb-1">
+                                {similar.vendor.name}
+                              </div>
+                            )}
+                            <p className="text-emerald-600 font-bold text-base">{formatPrice(similar.price)}</p>
+                            {/* Loading or status overlay */}
+                            {isLoading && (
+                              <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                                <div className="flex flex-col items-center gap-2">
+                                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                                  <span className="text-xs text-blue-600 font-medium">در حال افزودن...</span>
+                                </div>
+                              </div>
+                            )}
+                            {isAdded && !isDeleting && (
+                              <button
+                                className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center hover:bg-red-600"
+                                title="حذف از رقبا"
+                                disabled={isDeleting}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (isDeleting) return;
+                                  setDeletingCompetitorIds(prev => new Set(prev).add(Number(similar.id)));
+                                  try {
+                                    await authorizedFetch(
+                                      `https://bardia1234far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${similar.id}`,
+                                      { method: 'DELETE' }
+                                    );
+                                    setSearchResults(prevResults =>
+                                      prevResults.map((s: any) =>
+                                        s.id === similar.id ? { ...s, isCompetitor: false } : s
+                                      )
+                                    );
+                                    setToast({ message: `رقیب "${similar.title}" حذف شد`, type: 'success' });
+                                    setTimeout(() => setToast(null), 2000);
+                                    setRefreshTrigger((v) => v + 1);
+                                  } catch (e) {
+                                    setToast({ message: 'خطا در حذف رقیب', type: 'error' });
+                                    setTimeout(() => setToast(null), 2000);
+                                  } finally {
+                                    setDeletingCompetitorIds(prev => {
+                                      const next = new Set(prev);
+                                      next.delete(Number(similar.id));
+                                      return next;
+                                    });
+                                  }
+                                }}
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
+                            {isAdded && isDeleting && (
+                              <div className="absolute top-2 right-2 bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+                                <span>در حال حذف...</span>
+                              </div>
+                            )}
+                            {isAdded && !isDeleting && (
+                              <div className="absolute top-8 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                ✓ اضافه شد
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {hasMoreSimilarPages && (
+                      <div className="flex justify-center py-4">
+                        <button
+                          onClick={loadMoreSimilars}
+                          disabled={isLoadingMoreSimilars}
+                          className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          {isLoadingMoreSimilars ? 'در حال بارگذاری...' : 'نمایش نتایج بیشتر'}
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">هیچ محصول مشابهی یافت نشد.</p>
                 )}
               </>
             ) : (
-              <p className="text-gray-500 text-center py-4">هیچ محصول مشابهی یافت نشد.</p>
+              <div className="flex justify-center py-4">
+                <button
+                  onClick={fetchSimilarProducts}
+                  disabled={isLoadingSearch}
+                  className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isLoadingSearch ? 'در حال بارگذاری...' : 'جست و جوی هوشمند'}
+                </button>
+              </div>
             )}
           </div>
         )}
