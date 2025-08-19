@@ -1006,10 +1006,10 @@ const ProductDetail = () => {
                   {sortedSimilars.map((similar: any, idx: number) => {
                     const isLoading = addingCompetitorIds.has(similar.id);
                     const isAdded = similar.isCompetitor;
+                    const isDeleting = deletingCompetitorIds.has(Number(similar.id));
                     return (
                       <div
                         key={similar.id}
-                        onClick={() => !isLoading && !isAdded && addAsCompetitor(similar)}
                         className={`relative bg-gray-100 rounded-xl overflow-hidden flex flex-col items-center justify-between p-3 transition-all duration-300 ease-in-out ${
                           isLoading ? 'cursor-wait opacity-70' : isAdded ? 'cursor-default' : 'cursor-pointer'
                         } border ${
@@ -1017,6 +1017,7 @@ const ProductDetail = () => {
                           isLoading ? 'border-2 border-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.2),0_10px_25px_-5px_rgba(59,130,246,0.5)]' :
                           'border-gray-200 hover:shadow-md hover:scale-[1.02]'
                         }`}
+                        onClick={() => !isLoading && !isAdded && addAsCompetitor(similar)}
                       >
                         <img
                           src={similar.photo_id}
@@ -1057,8 +1058,50 @@ const ProductDetail = () => {
                             </div>
                           </div>
                         )}
-                        {isAdded && (
-                          <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                        {isAdded && !isDeleting && (
+                          <button
+                            className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center hover:bg-red-600"
+                            title="حذف از رقبا"
+                            disabled={isDeleting}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (isDeleting) return;
+                              setDeletingCompetitorIds(prev => new Set(prev).add(Number(similar.id)));
+                              try {
+                                await authorizedFetch(
+                                  `https://bardia1234far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${similar.id}`,
+                                  { method: 'DELETE' }
+                                );
+                                setSearchResults(prevResults =>
+                                  prevResults.map((s: any) =>
+                                    s.id === similar.id ? { ...s, isCompetitor: false } : s
+                                  )
+                                );
+                                setToast({ message: `رقیب "${similar.title}" حذف شد`, type: 'success' });
+                                setTimeout(() => setToast(null), 2000);
+                                setRefreshTrigger((v) => v + 1);
+                              } catch (e) {
+                                setToast({ message: 'خطا در حذف رقیب', type: 'error' });
+                                setTimeout(() => setToast(null), 2000);
+                              } finally {
+                                setDeletingCompetitorIds(prev => {
+                                  const next = new Set(prev);
+                                  next.delete(Number(similar.id));
+                                  return next;
+                                });
+                              }
+                            }}
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                        {isAdded && isDeleting && (
+                          <div className="absolute top-2 right-2 bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+                            <span>در حال حذف...</span>
+                          </div>
+                        )}
+                        {isAdded && !isDeleting && (
+                          <div className="absolute top-8 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
                             ✓ اضافه شد
                           </div>
                         )}
