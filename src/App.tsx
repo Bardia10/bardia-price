@@ -98,7 +98,7 @@ const MyProductCard = ({ product, onClick, onBasalamPageClick }: any) => (
 );
 
 const MyProducts = () => {
-  const { navigate, setSelectedProduct, authorizedFetch, basalamToken, setGlobalLoading } = useContext(AppContext);
+  const { navigate, setSelectedProduct, authorizedFetch, basalamToken, setGlobalLoading, setBasalamToken } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMorePages, setHasMorePages] = useState(true);
@@ -163,6 +163,12 @@ const MyProducts = () => {
       const res = await authorizedFetch(url);
       let data: any = null;
       try { data = await res.json(); } catch {}
+      if (res.status === 401) {
+        setApiError('باید دوباره لاگین کنید');
+        setBasalamToken('');
+        navigate('login');
+        return;
+      }
       if (!res.ok) {
         const message = (data && (data.message || data.error)) || 'خطا در دریافت محصولات';
         throw new Error(message);
