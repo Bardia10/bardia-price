@@ -1313,7 +1313,7 @@ const ProductDetail = () => {
 
 // Expensive Products Page (moved above App)
 const ExpensiveProductsPage = () => {
-  const { navigate, authorizedFetch, basalamToken, setSelectedProduct, setGlobalLoading } = useContext(AppContext);
+  const { navigate, authorizedFetch, basalamToken, setSelectedProduct, setGlobalLoading, setBasalamToken } = useContext(AppContext);
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -1327,6 +1327,12 @@ const ExpensiveProductsPage = () => {
       .then(async (res: Response) => {
         let data: any = null;
         try { data = await res.json(); } catch {}
+        if (res.status === 401) {
+          setApiError('باید دوباره لاگین کنید');
+          setBasalamToken('');
+          navigate('login');
+          return;
+        }
         if (!res.ok) {
           const message = (data && (data.message || data.error)) || 'خطا در دریافت محصولات غیر رقابتی';
           throw new Error(message);
