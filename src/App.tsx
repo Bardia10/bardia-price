@@ -484,6 +484,14 @@ const ProductDetail = () => {
       const productId = encodeURIComponent(String(selectedProduct.id));
       const url = `https://bardia1234far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=1`;
       const res = await authorizedFetch(url);
+      if (res.status === 401) {
+        setBasalamToken('');
+        navigate('login');
+        setSearchError('باید دوباره لاگین کنید');
+        setIsLoadingSearch(false);
+        setGlobalLoading(false);
+        return;
+      }
       let data: any = null;
       try { data = await res.json(); } catch {}
       if (!res.ok) {
