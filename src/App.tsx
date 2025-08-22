@@ -316,7 +316,7 @@ const ProductDetail = () => {
   // State for deleting competitor IDs
   const [deletingCompetitorIds, setDeletingCompetitorIds] = useState<Set<number>>(new Set());
 
-  const { navigate, selectedProduct, authorizedFetch, basalamToken, setGlobalLoading, lastNavigation } = useContext(AppContext);
+  const { navigate, selectedProduct, authorizedFetch, basalamToken, setGlobalLoading, lastNavigation, setBasalamToken } = useContext(AppContext);
   // Track where user came from (sessionStorage fallback)
   const [fromSection, setFromSection] = useState<string | null>(null);
   useEffect(() => {
@@ -404,10 +404,16 @@ const ProductDetail = () => {
     if (deletingCompetitorIds.has(competitorId)) return;
     setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
     try {
-      await authorizedFetch(
+      const res = await authorizedFetch(
         `https://bardia1234far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${competitorId}`,
         { method: 'DELETE' }
       );
+      if (res.status === 401) {
+        setBasalamToken('');
+        navigate('login');
+        alert('باید دوباره لاگین کنید');
+        return;
+      }
       setRefreshTrigger((v) => v + 1);
     } catch (e) {
       alert('خطا در حذف رقیب.');
@@ -1313,7 +1319,7 @@ const ProductDetail = () => {
 
 // Expensive Products Page (moved above App)
 const ExpensiveProductsPage = () => {
-  const { navigate, authorizedFetch, basalamToken, setSelectedProduct, setGlobalLoading, setBasalamToken } = useContext(AppContext);
+  const { navigate, authorizedFetch, basalamToken, setSelectedProduct, setGlobalLoading } = useContext(AppContext);
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -1327,12 +1333,6 @@ const ExpensiveProductsPage = () => {
       .then(async (res: Response) => {
         let data: any = null;
         try { data = await res.json(); } catch {}
-        if (res.status === 401) {
-          setApiError('باید دوباره لاگین کنید');
-          setBasalamToken('');
-          navigate('login');
-          return;
-        }
         if (!res.ok) {
           const message = (data && (data.message || data.error)) || 'خطا در دریافت محصولات غیر رقابتی';
           throw new Error(message);
