@@ -98,7 +98,7 @@ const MyProductCard = ({ product, onClick, onBasalamPageClick }: any) => (
 );
 
 const MyProducts = () => {
-  const { navigate, setSelectedProduct, authorizedFetch, basalamToken, setGlobalLoading } = useContext(AppContext);
+  const { navigate, setSelectedProduct, authorizedFetch, basalamToken, setGlobalLoading, setBasalamToken } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMorePages, setHasMorePages] = useState(true);
@@ -163,6 +163,12 @@ const MyProducts = () => {
       const res = await authorizedFetch(url);
       let data: any = null;
       try { data = await res.json(); } catch {}
+      if (res.status === 401) {
+        setApiError('باید دوباره لاگین کنید');
+        setBasalamToken('');
+        navigate('login');
+        return;
+      }
       if (!res.ok) {
         const message = (data && (data.message || data.error)) || 'خطا در دریافت محصولات';
         throw new Error(message);
@@ -310,7 +316,7 @@ const ProductDetail = () => {
   // State for deleting competitor IDs
   const [deletingCompetitorIds, setDeletingCompetitorIds] = useState<Set<number>>(new Set());
 
-  const { navigate, selectedProduct, authorizedFetch, basalamToken, setGlobalLoading, lastNavigation } = useContext(AppContext);
+  const { navigate, selectedProduct, authorizedFetch, basalamToken, setGlobalLoading, lastNavigation, setBasalamToken } = useContext(AppContext);
   // Track where user came from (sessionStorage fallback)
   const [fromSection, setFromSection] = useState<string | null>(null);
   useEffect(() => {
@@ -398,10 +404,16 @@ const ProductDetail = () => {
     if (deletingCompetitorIds.has(competitorId)) return;
     setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
     try {
-      await authorizedFetch(
+      const res = await authorizedFetch(
         `https://bardia1234far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${competitorId}`,
         { method: 'DELETE' }
       );
+      if (res.status === 401) {
+        setBasalamToken('');
+        navigate('login');
+        alert('باید دوباره لاگین کنید');
+        return;
+      }
       setRefreshTrigger((v) => v + 1);
     } catch (e) {
       alert('خطا در حذف رقیب.');
@@ -472,6 +484,14 @@ const ProductDetail = () => {
       const productId = encodeURIComponent(String(selectedProduct.id));
       const url = `https://bardia1234far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=1`;
       const res = await authorizedFetch(url);
+      if (res.status === 401) {
+        setBasalamToken('');
+        navigate('login');
+        setSearchError('باید دوباره لاگین کنید');
+        setIsLoadingSearch(false);
+        setGlobalLoading(false);
+        return;
+      }
       let data: any = null;
       try { data = await res.json(); } catch {}
       if (!res.ok) {
@@ -503,6 +523,13 @@ const ProductDetail = () => {
       const productId = encodeURIComponent(String(selectedProduct.id));
       const url = `https://bardia1234far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=${similarPage}`;
       const res = await authorizedFetch(url);
+      if (res.status === 401) {
+        setBasalamToken('');
+        navigate('login');
+        setSearchError('باید دوباره لاگین کنید');
+        setIsLoadingMoreSimilars(false);
+        return;
+      }
       let data: any = null;
       try { data = await res.json(); } catch {}
       if (!res.ok) {
@@ -554,6 +581,13 @@ const ProductDetail = () => {
       try {
         const url = `https://bardia1234far.app.n8n.cloud/webhook/competitors?product_id=${productId}`;
         const res = await authorizedFetch(url);
+        if (res.status === 401) {
+          setBasalamToken('');
+          navigate('login');
+          setConfirmedCompetitorsError('باید دوباره لاگین کنید');
+          setIsLoadingConfirmedCompetitors(false);
+          return;
+        }
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error((data && (data.message || data.error)) || 'خطا در دریافت رقبا');
         const list = Array.isArray(data) ? (data[0]?.competitors || []) : (data?.competitors || []);
@@ -645,10 +679,17 @@ const ProductDetail = () => {
         data = await response.json(); 
       } catch {}
 
-      if (!response.ok) {
-        const message = (data && (data.message || data.error)) || 'خطا در افزودن رقیب';
-        throw new Error(message);
-      }
+        if (response.status === 401) {
+          setBasalamToken('');
+          navigate('login');
+          setToast({ message: 'باید دوباره لاگین کنید', type: 'error' });
+          setTimeout(() => setToast(null), 3000);
+          return;
+        }
+        if (!response.ok) {
+          const message = (data && (data.message || data.error)) || 'خطا در افزودن رقیب';
+          throw new Error(message);
+        }
 
       // Update the visual state to show it's been added
       setSearchResults((prevResults) => 
