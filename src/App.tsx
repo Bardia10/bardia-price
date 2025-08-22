@@ -679,10 +679,17 @@ const ProductDetail = () => {
         data = await response.json(); 
       } catch {}
 
-      if (!response.ok) {
-        const message = (data && (data.message || data.error)) || 'خطا در افزودن رقیب';
-        throw new Error(message);
-      }
+        if (response.status === 401) {
+          setBasalamToken('');
+          navigate('login');
+          setToast({ message: 'باید دوباره لاگین کنید', type: 'error' });
+          setTimeout(() => setToast(null), 3000);
+          return;
+        }
+        if (!response.ok) {
+          const message = (data && (data.message || data.error)) || 'خطا در افزودن رقیب';
+          throw new Error(message);
+        }
 
       // Update the visual state to show it's been added
       setSearchResults((prevResults) => 
