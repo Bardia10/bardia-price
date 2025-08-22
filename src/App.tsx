@@ -581,6 +581,13 @@ const ProductDetail = () => {
       try {
         const url = `https://bardia1234far.app.n8n.cloud/webhook/competitors?product_id=${productId}`;
         const res = await authorizedFetch(url);
+        if (res.status === 401) {
+          setBasalamToken('');
+          navigate('login');
+          setConfirmedCompetitorsError('باید دوباره لاگین کنید');
+          setIsLoadingConfirmedCompetitors(false);
+          return;
+        }
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error((data && (data.message || data.error)) || 'خطا در دریافت رقبا');
         const list = Array.isArray(data) ? (data[0]?.competitors || []) : (data?.competitors || []);
