@@ -345,7 +345,7 @@ const ProductDetail = () => {
       setIsLoadingProductDetail(true);
       setProductDetailError(null);
       try {
-        const url = `https://n8nstudent.dotavvab.com/webhook/product?id=${selectedProduct.id}`;
+        const url = `https://bardia1234far.app.n8n.cloud/webhook/product?id=${selectedProduct.id}`;
         const res = await authorizedFetch(url, {
           headers: {
             Authorization: `Bearer ${basalamToken}`,
