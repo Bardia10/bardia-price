@@ -159,7 +159,7 @@ const MyProducts = () => {
         page: page.toString(),
         q: query
       });
-      const url = `https://bardia1234far.app.n8n.cloud/webhook/my-products?${params}`;
+      const url = `https://bardia123456far.app.n8n.cloud/webhook/my-products?${params}`;
       const res = await authorizedFetch(url);
       let data: any = null;
       try { data = await res.json(); } catch {}
@@ -345,7 +345,7 @@ const ProductDetail = () => {
       setIsLoadingProductDetail(true);
       setProductDetailError(null);
       try {
-        const url = `https://bardia1234far.app.n8n.cloud/webhook/product?id=${selectedProduct.id}`;
+        const url = `https://bardia123456far.app.n8n.cloud/webhook/product?id=${selectedProduct.id}`;
         const res = await authorizedFetch(url, {
           headers: {
             Authorization: `Bearer ${basalamToken}`,
@@ -405,7 +405,7 @@ const ProductDetail = () => {
     setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
     try {
       const res = await authorizedFetch(
-        `https://bardia1234far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${competitorId}`,
+        `https://bardia123456far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${competitorId}`,
         { method: 'DELETE' }
       );
       if (res.status === 401) {
@@ -482,7 +482,7 @@ const ProductDetail = () => {
     try {
       const encodedTitle = encodeURIComponent(selectedProduct.title.trim());
       const productId = encodeURIComponent(String(selectedProduct.id));
-      const url = `https://bardia1234far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=1`;
+      const url = `https://bardia123456far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=1`;
       const res = await authorizedFetch(url);
       if (res.status === 401) {
         setBasalamToken('');
@@ -521,7 +521,7 @@ const ProductDetail = () => {
     try {
       const encodedTitle = encodeURIComponent(selectedProduct.title.trim());
       const productId = encodeURIComponent(String(selectedProduct.id));
-      const url = `https://bardia1234far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=${similarPage}`;
+      const url = `https://bardia123456far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=${similarPage}`;
       const res = await authorizedFetch(url);
       if (res.status === 401) {
         setBasalamToken('');
@@ -579,7 +579,7 @@ const ProductDetail = () => {
       setIsLoadingConfirmedCompetitors(true);
       setConfirmedCompetitorsError(null);
       try {
-        const url = `https://bardia1234far.app.n8n.cloud/webhook/competitors?product_id=${productId}`;
+        const url = `https://bardia123456far.app.n8n.cloud/webhook/competitors?product_id=${productId}`;
         const res = await authorizedFetch(url);
         if (res.status === 401) {
           setBasalamToken('');
@@ -603,7 +603,7 @@ const ProductDetail = () => {
           while (idx < toFetch.length && !cancelled) {
             const current = toFetch[idx++];
             try {
-              const r = await fetch(`https://bardia1234far.app.n8n.cloud/webhook/product?id=${current.op_product}`);
+              const r = await fetch(`https://bardia123456far.app.n8n.cloud/webhook/product?id=${current.op_product}`);
               const d = await r.json().catch(() => ({}));
               const parsed = parseCoreDetail(d);
               parsed.vendorIdentifier = current.op_vendor;
@@ -666,7 +666,7 @@ const ProductDetail = () => {
         op_vendor: similarProduct.vendorIdentifier
       };
 
-      const response = await authorizedFetch('https://bardia1234far.app.n8n.cloud/webhook/competitors', {
+      const response = await authorizedFetch('https://bardia123456far.app.n8n.cloud/webhook/competitors', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1100,7 +1100,7 @@ const ProductDetail = () => {
                                   setDeletingCompetitorIds(prev => new Set(prev).add(Number(similar.id)));
                                   try {
                                     await authorizedFetch(
-                                      `https://bardia1234far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${similar.id}`,
+                                      `https://bardia123456far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${similar.id}`,
                                       { method: 'DELETE' }
                                     );
                                     setSearchResults(prevResults =>
@@ -1358,7 +1358,7 @@ const ExpensiveProductsPage = () => {
     setIsLoading(true);
     setGlobalLoading(true);
     setApiError(null);
-    authorizedFetch('https://bardia1234far.app.n8n.cloud/webhook/expensives')
+    authorizedFetch('https://bardia123456far.app.n8n.cloud/webhook/expensives')
       .then(async (res: Response) => {
         let data: any = null;
         try { data = await res.json(); } catch {}
@@ -1571,7 +1571,7 @@ const LoginPage = () => {
     setLoading(true);
     setGlobalLoading(true);
     try {
-      const response = await fetch('https://bardia1234far.app.n8n.cloud/webhook/login', {
+      const response = await fetch('https://bardia123456far.app.n8n.cloud/webhook/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
