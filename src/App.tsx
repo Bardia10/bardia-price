@@ -313,8 +313,22 @@ const MyProducts = () => {
 };
 
 const ProductDetail = () => {
+  // ...existing state declarations...
+  // ...existing state declarations...
+  // ...existing state declarations...
+  // ...existing code...
+
+  // ...existing state and context declarations...
+  // ...existing code...
+
+  // ...existing state and context declarations...
+  // ...existing code...
+
+  // ...existing code...
   // Local search for similar products
   const [similarSearchTerm, setSimilarSearchTerm] = useState('');
+  // Refresh key to trigger re-fetch
+  const [refreshKey, setRefreshKey] = useState(0);
   // State for deleting competitor IDs
   const [deletingCompetitorIds, setDeletingCompetitorIds] = useState<Set<number>>(new Set());
 
@@ -365,7 +379,7 @@ const ProductDetail = () => {
     };
     fetchDetail();
     return () => { cancelled = true; };
-  }, [selectedProduct?.id, basalamToken, authorizedFetch]);
+  }, [selectedProduct?.id, basalamToken, authorizedFetch, refreshKey]);
 
   // --- Existing states ---
   const [showOriginalProductFloating, setShowOriginalProductFloating] = useState(false);
@@ -628,7 +642,7 @@ const ProductDetail = () => {
     };
     run();
     return () => { cancelled = true; };
-  }, [authorizedFetch, basalamToken, selectedProduct, refreshTrigger]);
+  }, [authorizedFetch, basalamToken, selectedProduct, refreshTrigger, refreshKey]);
    // Auto-manage product in expensives based on price comparison with competitors
    useEffect(() => {
     if (!selectedProduct?.id || !selectedProduct?.price || confirmedCompetitorDetails.length === 0 || !basalamToken) {
@@ -798,6 +812,42 @@ const ProductDetail = () => {
   };
 
   // Show loading spinner if product detail is loading or not available
+  // --- Competitor price comparison logic ---
+  let lowestCompetitor = null;
+  let averageCompetitorPrice = 0;
+  let lowestBadgeText = '';
+  let lowestBadgeClass = '';
+  let avgBadgeText = '';
+  let avgBadgeClass = '';
+  if (confirmedCompetitorDetails && confirmedCompetitorDetails.length > 0 && productDetail) {
+    const pricedCompetitors = confirmedCompetitorDetails.filter(c => typeof c.price === 'number' && c.price > 0);
+    lowestCompetitor = pricedCompetitors.length > 0 ? pricedCompetitors.reduce((min, c) => (c.price < min.price ? c : min), pricedCompetitors[0]) : null;
+    averageCompetitorPrice = pricedCompetitors.length > 0 ? Math.round(pricedCompetitors.reduce((sum, c) => sum + c.price, 0) / pricedCompetitors.length) : 0;
+    if (lowestCompetitor) {
+      if (lowestCompetitor.price < productDetail.price) {
+        lowestBadgeText = `-${Math.round((productDetail.price - lowestCompetitor.price) / lowestCompetitor.price * 100)}% ارزان‌تر`;
+        lowestBadgeClass = 'bg-red-50 text-red-700 border-red-200';
+      } else if (lowestCompetitor.price > productDetail.price) {
+        lowestBadgeText = `+${Math.round((lowestCompetitor.price - productDetail.price) / productDetail.price * 100)}% گران‌تر`;
+        lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
+      } else {
+        lowestBadgeText = '=';
+        lowestBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+      }
+    }
+    if (averageCompetitorPrice > 0) {
+      if (averageCompetitorPrice < productDetail.price) {
+        avgBadgeText = `-${Math.round((productDetail.price - averageCompetitorPrice) / averageCompetitorPrice * 100)}% ارزان‌تر   `;
+        avgBadgeClass = 'bg-red-50 text-red-700 border-red-200';
+      } else if (averageCompetitorPrice > productDetail.price) {
+        avgBadgeText = `+${Math.round((averageCompetitorPrice - productDetail.price) / productDetail.price * 100)}% گران‌تر   `;
+        avgBadgeClass = 'bg-green-50 text-green-700 border-green-200';
+      } else {
+        avgBadgeText = '=';
+        avgBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+      }
+    }
+  }
   if (!selectedProduct || isLoadingProductDetail) {
     return <LoadingSpinner />;
   }
@@ -813,6 +863,16 @@ const ProductDetail = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header title="جزئیات محصول" compact />
+      {/* Refresh Button */}
+      <button
+        onClick={() => setRefreshKey((k) => k + 1)}
+        className="fixed top-2 right-2 z-40 bg-white/90 border border-gray-200 p-2 rounded-full shadow hover:bg-white flex items-center gap-1"
+        aria-label="تازه‌سازی"
+        title="تازه‌سازی اطلاعات"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582M20 20v-5h-.581M5.635 19.364A9 9 0 1020.364 4.636M20.364 4.636V8.5M20.364 4.636H16.5" /></svg>
+        <span className="text-xs text-blue-600 font-semibold">تازه‌سازی</span>
+      </button>
       <button
         onClick={() => {
           if (fromSection === 'not-best-price') {
@@ -941,78 +1001,33 @@ const ProductDetail = () => {
               <p className="text-red-600 text-sm">{confirmedCompetitorsError}</p>
             ) : confirmedCompetitorDetails.length > 0 ? (
               <>
-                {(() => {
-                  const priced = confirmedCompetitorDetails.filter(c => typeof c.price === 'number' && c.price > 0);
-                  const lowest = priced.length > 0 ? priced.reduce((min, c) => (c.price < min.price ? c : min), priced[0]) : null;
-                  const average = priced.length > 0 ? Math.round(priced.reduce((sum, c) => sum + c.price, 0) / priced.length) : 0;
-                  const diff = lowest ? (selectedProduct.price - lowest.price) : 0;
-
-                    // Lowest competitor comparison (corrected logic)
-                    let lowestBadgeText = '';
-                    let lowestBadgeClass = '';
-                    if (lowest) {
-                      if (lowest.price < selectedProduct.price) {
-                        // Competitor is cheaper
-                        lowestBadgeText = `-${Math.round((selectedProduct.price - lowest.price) / lowest.price * 100)}% ارزان‌تر`;
-                        lowestBadgeClass = 'bg-red-50 text-red-700 border-red-200';
-                      } else if (lowest.price > selectedProduct.price) {
-                        // Competitor is more expensive
-                        lowestBadgeText = `+${Math.round((lowest.price - selectedProduct.price) / selectedProduct.price * 100)}% گران‌تر`;
-                        lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
-                      } else {
-                        lowestBadgeText = '=';
-                        lowestBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
-                      }
-                    }
-
-                    // Average competitor comparison (corrected logic)
-                    let avgBadgeText = '';
-                    let avgBadgeClass = '';
-                    if (average > 0) {
-                      if (average < selectedProduct.price) {
-                        // Competitors are cheaper on average
-                        avgBadgeText = `-${Math.round((selectedProduct.price - average) / average * 100)}% ارزان‌تر   `;
-                        avgBadgeClass = 'bg-red-50 text-red-700 border-red-200';
-                      } else if (average > selectedProduct.price) {
-                        // Competitors are more expensive on average
-                        avgBadgeText = `+${Math.round((average - selectedProduct.price) / selectedProduct.price * 100)}% گران‌تر   `;
-                        avgBadgeClass = 'bg-green-50 text-green-700 border-green-200';
-                      } else {
-                        avgBadgeText = '=';
-                        avgBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
-                      }
-                    }
-
-                    return (
-                      <div className="mb-3 space-y-1">
-                        {lowest && (
-                          <div className="flex flex-wrap items-center gap-2 text-sm">
-                            <span className="font-semibold text-gray-800">کمترین قیمت رقیب:</span>
-                            <a
-                              href={lowest.productUrl || `https://basalam.com/product/${lowest.id}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-blue-600 hover:underline font-semibold"
-                            >
-                              {formatPrice(lowest.price)}
-                            </a>
-                            <span className={`px-2 py-0.5 rounded text-xs border ${lowestBadgeClass}`}>
-                              {lowestBadgeText}
-                            </span>
-                            <span className="text-gray-600 ml-1">(شما: {formatPrice(selectedProduct.price)})</span>
-                          </div>
-                        )}
-                        {average > 0 && (
-                          <div className="flex flex-wrap items-center gap-2 text-sm mt-1">
-                            <span className="font-semibold">میانگین قیمت رقبا:</span> {formatPrice(average)}
-                            <span className={`px-2 py-0.5 rounded text-xs border ${avgBadgeClass}`}>
-                              {avgBadgeText}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
+                <div className="mb-3 space-y-1">
+                  {lowestCompetitor && (
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-semibold text-gray-800">کمترین قیمت رقیب:</span>
+                      <a
+                        href={lowestCompetitor.productUrl || `https://basalam.com/product/${lowestCompetitor.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 hover:underline font-semibold"
+                      >
+                        {formatPrice(lowestCompetitor.price)}
+                      </a>
+                      <span className={`px-2 py-0.5 rounded text-xs border ${lowestBadgeClass}`}>
+                        {lowestBadgeText}
+                      </span>
+                      <span className="text-gray-600 ml-1">(شما: {formatPrice(productDetail.price)})</span>
+                    </div>
+                  )}
+                  {averageCompetitorPrice > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 text-sm mt-1">
+                      <span className="font-semibold">میانگین قیمت رقبا:</span> {formatPrice(averageCompetitorPrice)}
+                      <span className={`px-2 py-0.5 rounded text-xs border ${avgBadgeClass}`}>
+                        {avgBadgeText}
+                      </span>
+                    </div>
+                  )}
+                </div>
 
                 {/* Edit Now Button */}
                 <div className="mt-4 mb-3">
