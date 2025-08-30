@@ -629,7 +629,45 @@ const ProductDetail = () => {
     run();
     return () => { cancelled = true; };
   }, [authorizedFetch, basalamToken, selectedProduct, refreshTrigger]);
+  // Auto-delete product from expensives when price is lower than lowest competitor
+  useEffect(() => {
+    if (!selectedProduct?.id || !selectedProduct?.price || confirmedCompetitorDetails.length === 0 || !basalamToken) {
+      return;
+    }
 
+    const priced = confirmedCompetitorDetails.filter(c => typeof c.price === 'number' && c.price > 0);
+    if (priced.length === 0) return;
+
+    const lowest = priced.reduce((min, c) => (c.price < min.price ? c : min), priced[0]);
+
+    // If selected product's price is lower than the lowest competitor's price
+    if (selectedProduct.price < lowest.price) {
+      const deleteProductFromExpensives = async () => {
+        try {
+          const response = await authorizedFetch('https://bardia123456far.app.n8n.cloud/webhook/expensives', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${basalamToken}`,
+            },
+            body: JSON.stringify({
+              product_id: [selectedProduct.id]
+            })
+          });
+
+          if (response.ok) {
+            console.log(`Product ${selectedProduct.id} deleted from expensives - price lower than competitors`);
+          } else {
+            console.error('Failed to delete product from expensives');
+          }
+        } catch (error) {
+          console.error('Error deleting product from expensives:', error);
+        }
+      };
+
+      deleteProductFromExpensives();
+    }
+  }, [confirmedCompetitorDetails, selectedProduct, authorizedFetch, basalamToken]);
   // (competitor preview chips removed)
 
   const handleScroll = useCallback(() => {
