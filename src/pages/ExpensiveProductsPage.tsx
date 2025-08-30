@@ -5,6 +5,8 @@ import {LoadingSpinner} from "../App";
 import {MyProductCard} from "../App";
 
 const ExpensiveProductsPage = () => {
+  const [isReevaluateModalOpen, setIsReevaluateModalOpen] = useState(false);
+  const [isReevaluating, setIsReevaluating] = useState(false);
   const { navigate, authorizedFetch, basalamToken, setSelectedProduct, setGlobalLoading } = useContext(AppContext);
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,30 +41,38 @@ const ExpensiveProductsPage = () => {
     };
   };
 
-  useEffect(() => {
-    if (!basalamToken) return;
+  // Track when reevaluation POST is in progress
+  const [pendingReevaluation, setPendingReevaluation] = useState(false);
+
+  // Fetch expensive products
+  const fetchExpensiveProducts = async () => {
     setIsLoading(true);
     setGlobalLoading(true);
     setApiError(null);
-    authorizedFetch('https://bardia123456far.app.n8n.cloud/webhook/expensives')
-      .then(async (res: Response) => {
-        let data: any = null;
-        try { data = await res.json(); } catch {}
-        if (!res.ok) {
-          const message = (data && (data.message || data.error)) || 'خطا در دریافت محصولات غیر رقابتی';
-          throw new Error(message);
-        }
-        const arr = Array.isArray(data?.products) ? data.products : [];
-        setProducts(arr.map(mapExpensiveProduct));
-      })
-      .catch((e: any) => {
-        setApiError(e?.message || 'خطای نامشخص');
-      })
-      .finally(() => {
-        setIsLoading(false);
-        setGlobalLoading(false);
-      });
-  }, [basalamToken, authorizedFetch, setGlobalLoading]);
+    try {
+      const res = await authorizedFetch('https://bardia123456far.app.n8n.cloud/webhook/expensives');
+      let data: any = null;
+      try { data = await res.json(); } catch {}
+      if (!res.ok) {
+        const message = (data && (data.message || data.error)) || 'خطا در دریافت محصولات غیر رقابتی';
+        throw new Error(message);
+      }
+      const arr = Array.isArray(data?.products) ? data.products : [];
+      setProducts(arr.map(mapExpensiveProduct));
+    } catch (e: any) {
+      setApiError(e?.message || 'خطای نامشخص');
+    } finally {
+      setIsLoading(false);
+      setGlobalLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!basalamToken) return;
+    // If reevaluation is pending, don't fetch until it's done
+    if (pendingReevaluation) return;
+    fetchExpensiveProducts();
+  }, [basalamToken, authorizedFetch, setGlobalLoading, pendingReevaluation]);
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
@@ -78,6 +88,60 @@ const ExpensiveProductsPage = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header title="محصولات با قیمت غیر رقابتی" onBack={() => navigate('dashboard')} />
       <div className="p-4 flex flex-col space-y-4">
+        {/* Reevaluate Button */}
+        <button
+          className="mb-4 px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold shadow hover:bg-orange-700 transition w-fit self-end"
+          onClick={() => setIsReevaluateModalOpen(true)}
+          disabled={isReevaluating}
+        >
+          ارزیابی دوباره
+        </button>
+
+        {/* Modal for confirmation */}
+        {isReevaluateModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4" onClick={() => setIsReevaluateModalOpen(false)}>
+            <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+              <div className="p-4 border-b">
+                <h3 className="font-bold text-gray-800 text-lg">ارزیابی دوباره محصولات غیر رقابتی</h3>
+              </div>
+              <div className="p-4">
+                <p className="text-sm text-gray-700 mb-4">انجام این عملیات چند دقیقه زمان می‌برد. آیا مطمئن هستید که می‌خواهید منتظر بمانید؟</p>
+                <div className="flex justify-end gap-2">
+                  <button
+                    className="px-4 py-2 rounded-md border bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    onClick={() => setIsReevaluateModalOpen(false)}
+                    disabled={pendingReevaluation}
+                  >
+                    انصراف
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded-md bg-orange-600 text-white font-semibold hover:bg-orange-700"
+                    disabled={pendingReevaluation}
+                    onClick={async () => {
+                      setPendingReevaluation(true);
+                      setIsReevaluateModalOpen(false);
+                      setIsLoading(true);
+                      setGlobalLoading(true);
+                      try {
+                        await authorizedFetch('https://bardia123456far.app.n8n.cloud/webhook/expensives', {
+                          method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${basalamToken}`,
+                            'Content-Type': 'application/json',
+                          },
+                        });
+                      } catch {}
+                      setPendingReevaluation(false);
+                    }}
+                  >
+                    تایید
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isLoading && <LoadingSpinner />}
         {apiError && <div className="text-red-600 text-sm text-right">{apiError}</div>}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
