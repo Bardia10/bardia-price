@@ -629,8 +629,8 @@ const ProductDetail = () => {
     run();
     return () => { cancelled = true; };
   }, [authorizedFetch, basalamToken, selectedProduct, refreshTrigger]);
-  // Auto-delete product from expensives when price is lower than lowest competitor
-  useEffect(() => {
+   // Auto-manage product in expensives based on price comparison with competitors
+   useEffect(() => {
     if (!selectedProduct?.id || !selectedProduct?.price || confirmedCompetitorDetails.length === 0 || !basalamToken) {
       return;
     }
@@ -640,35 +640,42 @@ const ProductDetail = () => {
 
     const lowest = priced.reduce((min, c) => (c.price < min.price ? c : min), priced[0]);
 
-    // If selected product's price is lower than the lowest competitor's price
-    if (selectedProduct.price < lowest.price) {
-      const deleteProductFromExpensives = async () => {
-        try {
-          const response = await authorizedFetch('https://bardia123456far.app.n8n.cloud/webhook/expensives', {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${basalamToken}`,
-            },
-            body: JSON.stringify({
-              product_id: [selectedProduct.id]
-            })
-          });
+    const manageProductInExpensives = async (method: 'DELETE' | 'PUT') => {
+      try {
+        const response = await authorizedFetch('https://bardia123456far.app.n8n.cloud/webhook/expensives', {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${basalamToken}`,
+          },
+          body: JSON.stringify({
+            product_id: selectedProduct.id
+          })
+        });
 
-          if (response.ok) {
+        if (response.ok) {
+          if (method === 'DELETE') {
             console.log(`Product ${selectedProduct.id} deleted from expensives - price lower than competitors`);
           } else {
-            console.error('Failed to delete product from expensives');
+            console.log(`Product ${selectedProduct.id} added to expensives - price not lower than competitors`);
           }
-        } catch (error) {
-          console.error('Error deleting product from expensives:', error);
+        } else {
+          console.error(`Failed to ${method === 'DELETE' ? 'delete' : 'add'} product from/to expensives`);
         }
-      };
+      } catch (error) {
+        console.error(`Error ${method === 'DELETE' ? 'deleting' : 'adding'} product ${method === 'DELETE' ? 'from' : 'to'} expensives:`, error);
+      }
+    };
 
-      deleteProductFromExpensives();
+    // If selected product's price is lower than the lowest competitor's price
+    if (selectedProduct.price < lowest.price) {
+      manageProductInExpensives('DELETE');
+    } else {
+      // If selected product's price is NOT lower than the lowest competitor's price
+      manageProductInExpensives('PUT');
     }
   }, [confirmedCompetitorDetails, selectedProduct, authorizedFetch, basalamToken]);
-  // (competitor preview chips removed)
+
 
   const handleScroll = useCallback(() => {
     const scrollPosition = window.scrollY;
