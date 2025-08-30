@@ -645,7 +645,7 @@ const ProductDetail = () => {
   }, [authorizedFetch, basalamToken, selectedProduct, refreshTrigger, refreshKey]);
    // Auto-manage product in expensives based on price comparison with competitors
    useEffect(() => {
-    if (!selectedProduct?.id || !selectedProduct?.price || confirmedCompetitorDetails.length === 0 || !basalamToken) {
+    if (!selectedProduct?.id || !productDetail?.price || confirmedCompetitorDetails.length === 0 || !basalamToken) {
       return;
     }
 
@@ -681,14 +681,14 @@ const ProductDetail = () => {
       }
     };
 
-    // If selected product's price is lower than the lowest competitor's price
-    if (selectedProduct.price < lowest.price) {
+    // If productDetail's price is lower than the lowest competitor's price
+    if (productDetail.price < lowest.price) {
       manageProductInExpensives('DELETE');
     } else {
-      // If selected product's price is NOT lower than the lowest competitor's price
+      // If productDetail's price is NOT lower than the lowest competitor's price
       manageProductInExpensives('PUT');
     }
-  }, [confirmedCompetitorDetails, selectedProduct, authorizedFetch, basalamToken]);
+  }, [confirmedCompetitorDetails, productDetail, selectedProduct, authorizedFetch, basalamToken]);
 
 
   const handleScroll = useCallback(() => {
