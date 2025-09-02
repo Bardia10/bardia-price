@@ -100,10 +100,10 @@ const LoginPage: React.FC = () => {
         {/* Registration section */}
         <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
           <p className="text-sm text-blue-800 text-center mb-2">
-            برای ثبت نام به ایمیل زیر پیام بفرستید:
+            برای ثبت نام یا دریافت رمز عبور به آیدی تلگرام زیر پیام دهید:
           </p>
           <p className="text-sm font-medium text-blue-900 text-center">
-            farokhsereshtibardia@gmail.com
+            @BardiaFar
           </p>
         </div>
       </div>
