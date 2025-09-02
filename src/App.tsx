@@ -245,6 +245,11 @@ const MyProducts = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header title="محصولات من" onBack={() => navigate('dashboard')} />
+      <div className="flex justify-center mb-4 mt-6">
+        <p className="text-lg text-emerald-700 leading-relaxed">
+          روی محصول مورد نظر کلیک کنین تا با رقیب ها مقایسش کنین
+        </p>
+      </div>
       <div className="p-4 flex flex-col space-y-4">
         {isLoadingApi && <LoadingSpinner />}
         {apiError && <div className="text-red-600 text-sm text-right">{apiError}</div>}
@@ -866,13 +871,29 @@ const ProductDetail = () => {
       {/* Refresh Button */}
       <button
         onClick={() => setRefreshKey((k) => k + 1)}
-        className="fixed top-2 right-2 z-40 bg-white/90 border border-gray-200 p-2 rounded-full shadow hover:bg-white flex items-center gap-1"
-        aria-label="تازه‌سازی"
+        className="fixed top-2 right-2 z-40 bg-white/90 border border-gray-200 p-2 rounded-full shadow hover:bg-white flex items-center justify-center gap-1 overflow-visible"
+        aria-label="تازه‌سازی اطلاعات"
         title="تازه‌سازی اطلاعات"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582M20 20v-5h-.581M5.635 19.364A9 9 0 1020.364 4.636M20.364 4.636V8.5M20.364 4.636H16.5" /></svg>
+        <div className="flex items-center justify-center h-5 w-5">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-full w-full text-blue-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 4v5h5M20 20v-5h-5M5 19a9 9 0 1113-13"
+            />
+          </svg>
+        </div>
         <span className="text-xs text-blue-600 font-semibold">تازه‌سازی</span>
       </button>
+
       <button
         onClick={() => {
           if (fromSection === 'not-best-price') {
@@ -987,9 +1008,9 @@ const ProductDetail = () => {
           <p className="text-emerald-600 text-2xl font-bold mb-3">{formatPrice(productDetail.price)}</p>
 
           {/* Fresh competitors section - from live APIs only */}
-          <div className="border-t border-gray-200 pt-3 mt-3">
+          <div className="border-t border-gray-200 pt-3 mt-12">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="font-bold text-gray-800 text-md">رقبای فعلی شما</h4>
+              <h4 className="font-bold text-gray-800 text-xl">بررسی رقیب ها</h4>
               <span className="text-sm text-gray-500">
                 {isLoadingConfirmedCompetitors ? 'در حال بارگذاری...' : `${confirmedCompetitorDetails.length} رقیب`}
               </span>
@@ -1005,18 +1026,18 @@ const ProductDetail = () => {
                   {lowestCompetitor && (
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       <span className="font-semibold text-gray-800">کمترین قیمت رقیب:</span>
+                      <span className="text-blue-600 ml-1">{formatPrice(lowestCompetitor.price)}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs border ${lowestBadgeClass}`}>
+                        {lowestBadgeText}
+                      </span>
                       <a
                         href={lowestCompetitor.productUrl || `https://basalam.com/product/${lowestCompetitor.id}`}
                         target="_blank"
                         rel="noreferrer"
                         className="text-blue-600 hover:underline font-semibold"
                       >
-                        {formatPrice(lowestCompetitor.price)}
+                        مشاهده رقیب در باسلام
                       </a>
-                      <span className={`px-2 py-0.5 rounded text-xs border ${lowestBadgeClass}`}>
-                        {lowestBadgeText}
-                      </span>
-                      <span className="text-gray-600 ml-1">(شما: {formatPrice(productDetail.price)})</span>
                     </div>
                   )}
                   {averageCompetitorPrice > 0 && (
@@ -1029,25 +1050,30 @@ const ProductDetail = () => {
                   )}
                 </div>
 
+                
+
+                <div className="flex items-center justify-center mb-3">
+                  <button
+                    onClick={() => setIsCompetitorsModalOpen(true)}
+                    className="py-2 px-4 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 transition duration-200 ease-in-out shadow-sm flex items-center gap-2"
+                  >
+                    <Eye size={16} />
+                    مشاهده رقیب های انتخاب شده
+                  </button>
+                </div>
                 {/* Edit Now Button */}
-                <div className="mt-4 mb-3">
+                <div className="m-12">
+                  <div className="flex justify-center m-3">
+                    <p className="text-lg text-emerald-700 leading-relaxed">
+                      میتونی قیمت محصولت رو ویرایش کنی
+                    </p>
+                  </div>
                   <button
                     onClick={() => window.open(`https://vendor.basalam.com/edit-product/${selectedProduct.id}`, '_blank')}
                     className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 ease-in-out shadow-sm flex items-center justify-center gap-2"
                   >
                     <Wrench size={18} />
                     ویرایش محصول
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-700">مشاهده جزئیات رقبا:</span>
-                  <button
-                    onClick={() => setIsCompetitorsModalOpen(true)}
-                    className="py-2 px-4 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 transition duration-200 ease-in-out shadow-sm flex items-center gap-2"
-                  >
-                    <Eye size={16} />
-                    مشاهده کامل
                   </button>
                 </div>
               </>
@@ -1068,10 +1094,15 @@ const ProductDetail = () => {
         {/* Similar products can be toggled; competitors modal is independent */}
         {showSimilars && (
           <div ref={similarsContainerRef} className="bg-white p-4 rounded-xl shadow-md mb-4">
-            <h3 className="text-lg font-bold text-gray-800 mb-3">محصولات مشابه (از جستجوی زنده Basalam)</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-3">اضافه کردن رقیب های جدید:</h3>
             {/* Local search box for similar products */}
             {hasFetchedSimilars ? (
               <>
+                <div className="flex justify-center mb-4 mt-4">
+                  <p className="text-lg text-emerald-700 leading-relaxed">
+                    روی محصول مورد نظر کلیک کنین تا به رقیب ها اضافه بشه
+                  </p>
+                </div>
                 <div className="mb-4 flex items-center gap-2">
                   <input
                     type="text"

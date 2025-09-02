@@ -11,3 +11,9 @@
   scrollbar-width: none;
 }
 
+/* Use Vazirmatn everywhere */
+@layer base {
+  html {
+    @apply font-sans antialiased;
+  }
+}
