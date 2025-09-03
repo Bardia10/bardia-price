@@ -50,7 +50,7 @@ const ExpensiveProductsPage = () => {
     setGlobalLoading(true);
     setApiError(null);
     try {
-      const res = await authorizedFetch('https://bardia123456far.app.n8n.cloud/webhook/expensives');
+      const res = await authorizedFetch('https://bardia1234567far.app.n8n.cloud/webhook/expensives');
       let data: any = null;
       try { data = await res.json(); } catch {}
       if (!res.ok) {
@@ -123,7 +123,7 @@ const ExpensiveProductsPage = () => {
                       setIsLoading(true);
                       setGlobalLoading(true);
                       try {
-                        await authorizedFetch('https://bardia123456far.app.n8n.cloud/webhook/expensives', {
+                        await authorizedFetch('https://bardia1234567far.app.n8n.cloud/webhook/expensives', {
                           method: 'POST',
                           headers: {
                             'Authorization': `Bearer ${basalamToken}`,

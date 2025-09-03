@@ -161,7 +161,7 @@ const MyProducts = () => {
         page: page.toString(),
         q: query
       });
-      const url = `https://bardia123456far.app.n8n.cloud/webhook/my-products?${params}`;
+      const url = `https://bardia1234567far.app.n8n.cloud/webhook/my-products?${params}`;
       const res = await authorizedFetch(url);
       let data: any = null;
       try { data = await res.json(); } catch {}
@@ -366,7 +366,7 @@ const ProductDetail = () => {
       setIsLoadingProductDetail(true);
       setProductDetailError(null);
       try {
-        const url = `https://bardia123456far.app.n8n.cloud/webhook/product?id=${selectedProduct.id}`;
+        const url = `https://bardia1234567far.app.n8n.cloud/webhook/product?id=${selectedProduct.id}`;
         const res = await authorizedFetch(url, {
           headers: {
             Authorization: `Bearer ${basalamToken}`,
@@ -426,7 +426,7 @@ const ProductDetail = () => {
     setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
     try {
       const res = await authorizedFetch(
-        `https://bardia123456far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${competitorId}`,
+        `https://bardia1234567far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${competitorId}`,
         { method: 'DELETE' }
       );
       if (res.status === 401) {
@@ -503,7 +503,7 @@ const ProductDetail = () => {
     try {
       const encodedTitle = encodeURIComponent(selectedProduct.title.trim());
       const productId = encodeURIComponent(String(selectedProduct.id));
-      const url = `https://bardia123456far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=1`;
+      const url = `https://bardia1234567far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=1`;
       const res = await authorizedFetch(url);
       if (res.status === 401) {
         setBasalamToken('');
@@ -542,7 +542,7 @@ const ProductDetail = () => {
     try {
       const encodedTitle = encodeURIComponent(selectedProduct.title.trim());
       const productId = encodeURIComponent(String(selectedProduct.id));
-      const url = `https://bardia123456far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=${similarPage}`;
+      const url = `https://bardia1234567far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=${similarPage}`;
       const res = await authorizedFetch(url);
       if (res.status === 401) {
         setBasalamToken('');
@@ -600,7 +600,7 @@ const ProductDetail = () => {
       setIsLoadingConfirmedCompetitors(true);
       setConfirmedCompetitorsError(null);
       try {
-        const url = `https://bardia123456far.app.n8n.cloud/webhook/competitors?product_id=${productId}`;
+        const url = `https://bardia1234567far.app.n8n.cloud/webhook/competitors?product_id=${productId}`;
         const res = await authorizedFetch(url);
         if (res.status === 401) {
           setBasalamToken('');
@@ -624,7 +624,7 @@ const ProductDetail = () => {
           while (idx < toFetch.length && !cancelled) {
             const current = toFetch[idx++];
             try {
-              const r = await fetch(`https://bardia123456far.app.n8n.cloud/webhook/product?id=${current.op_product}`);
+              const r = await fetch(`https://bardia1234567far.app.n8n.cloud/webhook/product?id=${current.op_product}`);
               const d = await r.json().catch(() => ({}));
               const parsed = parseCoreDetail(d);
               parsed.vendorIdentifier = current.op_vendor;
@@ -661,7 +661,7 @@ const ProductDetail = () => {
 
     const manageProductInExpensives = async (method: 'DELETE' | 'PUT') => {
       try {
-        const response = await authorizedFetch('https://bardia123456far.app.n8n.cloud/webhook/expensives', {
+        const response = await authorizedFetch('https://bardia1234567far.app.n8n.cloud/webhook/expensives', {
           method: method,
           headers: {
             'Content-Type': 'application/json',
@@ -708,7 +708,22 @@ const ProductDetail = () => {
 
   // ...existing code...
 
-  const addAsCompetitor = async (similarProduct: any) => {
+
+  // --- Sequential Add Competitor Queue ---
+  const addCompetitorQueueRef = useRef<(() => Promise<void>)[]>([]);
+  const isProcessingQueueRef = useRef(false);
+
+  const processAddCompetitorQueue = async () => {
+    if (isProcessingQueueRef.current) return;
+    isProcessingQueueRef.current = true;
+    while (addCompetitorQueueRef.current.length > 0) {
+      const fn = addCompetitorQueueRef.current.shift();
+      if (fn) await fn();
+    }
+    isProcessingQueueRef.current = false;
+  };
+
+  const addAsCompetitor = (similarProduct: any) => {
     if (!selectedProduct?.id || !similarProduct?.id || !similarProduct?.vendorIdentifier) {
       setToast({ message: 'اطلاعات محصول ناقص است', type: 'error' });
       setTimeout(() => setToast(null), 2000);
@@ -716,34 +731,33 @@ const ProductDetail = () => {
     }
 
     const productId = similarProduct.id;
-    
     // Check if already adding this competitor
     if (addingCompetitorIds.has(productId)) {
       return;
     }
+    // Immediately set loading state so UI updates
+    setAddingCompetitorIds(prev => new Set([...prev, productId]));
 
-    try {
-      // Add to loading set
-      setAddingCompetitorIds(prev => new Set([...prev, productId]));
+    addCompetitorQueueRef.current.push(async () => {
+      try {
+        const requestBody = {
+          self_product: Number(selectedProduct.id),
+          op_product: Number(similarProduct.id),
+          op_vendor: similarProduct.vendorIdentifier
+        };
 
-      const requestBody = {
-        self_product: Number(selectedProduct.id),
-        op_product: Number(similarProduct.id),
-        op_vendor: similarProduct.vendorIdentifier
-      };
+        const response = await authorizedFetch('https://bardia1234567far.app.n8n.cloud/webhook/competitors', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
 
-      const response = await authorizedFetch('https://bardia123456far.app.n8n.cloud/webhook/competitors', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      let data: any = null;
-      try { 
-        data = await response.json(); 
-      } catch {}
+        let data: any = null;
+        try { 
+          data = await response.json(); 
+        } catch {}
 
         if (response.status === 401) {
           setBasalamToken('');
@@ -757,33 +771,35 @@ const ProductDetail = () => {
           throw new Error(message);
         }
 
-      // Update the visual state to show it's been added
-      setSearchResults((prevResults) => 
-        prevResults.map((s: any) =>
-          s.id === similarProduct.id ? { ...s, isCompetitor: true } : s
-        )
-      );
+        // Update the visual state to show it's been added
+        setSearchResults((prevResults) => 
+          prevResults.map((s: any) =>
+            s.id === similarProduct.id ? { ...s, isCompetitor: true } : s
+          )
+        );
 
-      setToast({ message: `"${similarProduct.title}" به عنوان رقیب اضافه شد`, type: 'success' });
-      setTimeout(() => setToast(null), 3000);
+        setToast({ message: `"${similarProduct.title}" به عنوان رقیب اضافه شد`, type: 'success' });
+        setTimeout(() => setToast(null), 3000);
 
-      // Refresh confirmed competitors list after a short delay
-      setTimeout(() => {
-        // Trigger a re-fetch by updating the refresh trigger
-        setRefreshTrigger(prev => prev + 1);
-      }, 1000);
+        // Refresh confirmed competitors list after a short delay
+        setTimeout(() => {
+          // Trigger a re-fetch by updating the refresh trigger
+          setRefreshTrigger(prev => prev + 1);
+        }, 1000);
 
-    } catch (error: any) {
-      setToast({ message: error?.message || 'خطا در افزودن رقیب', type: 'error' });
-      setTimeout(() => setToast(null), 3000);
-    } finally {
-      // Remove from loading set
-      setAddingCompetitorIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(productId);
-        return newSet;
-      });
-    }
+      } catch (error: any) {
+        setToast({ message: error?.message || 'خطا در افزودن رقیب', type: 'error' });
+        setTimeout(() => setToast(null), 3000);
+      } finally {
+        // Remove from loading set
+        setAddingCompetitorIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(productId);
+          return newSet;
+        });
+      }
+    });
+    processAddCompetitorQueue();
   };
 
   // Filter similar products by local search term, keep API order
@@ -1192,7 +1208,7 @@ const ProductDetail = () => {
                                   setDeletingCompetitorIds(prev => new Set(prev).add(Number(similar.id)));
                                   try {
                                     await authorizedFetch(
-                                      `https://bardia123456far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${similar.id}`,
+                                      `https://bardia1234567far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${similar.id}`,
                                       { method: 'DELETE' }
                                     );
                                     setSearchResults(prevResults =>
