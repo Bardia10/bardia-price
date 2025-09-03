@@ -1064,7 +1064,16 @@ const ProductDetail = () => {
                     مشاهده همه رقیب های انتخاب شده
                   </button>
                 </div>
-                {/* Edit Now Button */}
+                
+
+              </>
+            ) : (
+              <p className="text-gray-500 text-sm">هنوز رقیبی اضافه نشده است.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Edit Now Button */}
                 <div className="flex flex-col items-center m-12">
                   <div className="m-3">
                     <p className="text-lg text-emerald-700 leading-relaxed text-center">
@@ -1080,24 +1089,9 @@ const ProductDetail = () => {
                   </button>
                 </div>
 
-              </>
-            ) : (
-              <p className="text-gray-500 text-sm">هنوز رقیبی اضافه نشده است.</p>
-            )}
-          </div>
-        </div>
-
-        {/* <div className="flex items-center justify-between gap-3 mb-6">
-          <button onClick={() => setShowSimilars((v) => !v)} className="flex-1 flex items-center justify-center p-4 bg-emerald-600 text-white rounded-xl shadow-md hover:bg-emerald-700 transition duration-300 ease-in-out">
-            <Sparkles className="ml-3" />
-            <span className="text-lg font-semibold">{showSimilars ? 'پنهان کردن نتایج' : 'جست و جوی هوشمند'}</span>
-          </button>
-          <div />
-        </div>*/}
-
         {/* Similar products can be toggled; competitors modal is independent */}
         {showSimilars && (
-          <div ref={similarsContainerRef} className="bg-white p-4 rounded-xl shadow-md mb-4">
+          <div ref={similarsContainerRef} className="bg-white p-4 rounded-xl shadow-md mb-4 flex flex-col items-center">
             <h3 className="text-xl font-bold text-gray-800 mb-3">اضافه کردن رقیب های جدید:</h3>
             {/* Local search box for similar products */}
             {hasFetchedSimilars ? (
@@ -1117,11 +1111,12 @@ const ProductDetail = () => {
                   />
                   {similarSearchTerm && (
                     <button
-                      className="px-3 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600"
+                      className="px-3 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 whitespace-nowrap"
                       onClick={() => setSimilarSearchTerm('')}
                     >
                       پاک کردن
                     </button>
+
                   )}
                 </div>
                 {isLoadingSearch ? (
