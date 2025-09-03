@@ -846,10 +846,10 @@ const ProductDetail = () => {
     averageCompetitorPrice = pricedCompetitors.length > 0 ? Math.round(pricedCompetitors.reduce((sum, c) => sum + c.price, 0) / pricedCompetitors.length) : 0;
     if (lowestCompetitor) {
       if (lowestCompetitor.price < productDetail.price) {
-        lowestBadgeText = `-${Math.round((productDetail.price - lowestCompetitor.price) / lowestCompetitor.price * 100)}% ارزان‌تر`;
+        lowestBadgeText = `-${Math.round((productDetail.price - lowestCompetitor.price) / lowestCompetitor.price * 100)}% ارزان‌تر از شما`;
         lowestBadgeClass = 'bg-red-50 text-red-700 border-red-200';
       } else if (lowestCompetitor.price > productDetail.price) {
-        lowestBadgeText = `+${Math.round((lowestCompetitor.price - productDetail.price) / productDetail.price * 100)}% گران‌تر`;
+        lowestBadgeText = `+${Math.round((lowestCompetitor.price - productDetail.price) / productDetail.price * 100)}% گران‌تر از شما`;
         lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
       } else {
         lowestBadgeText = '=';
@@ -858,10 +858,10 @@ const ProductDetail = () => {
     }
     if (averageCompetitorPrice > 0) {
       if (averageCompetitorPrice < productDetail.price) {
-        avgBadgeText = `-${Math.round((productDetail.price - averageCompetitorPrice) / averageCompetitorPrice * 100)}% ارزان‌تر   `;
+        avgBadgeText = `-${Math.round((productDetail.price - averageCompetitorPrice) / averageCompetitorPrice * 100)}% ارزان‌تر از شما   `;
         avgBadgeClass = 'bg-red-50 text-red-700 border-red-200';
       } else if (averageCompetitorPrice > productDetail.price) {
-        avgBadgeText = `+${Math.round((averageCompetitorPrice - productDetail.price) / productDetail.price * 100)}% گران‌تر   `;
+        avgBadgeText = `+${Math.round((averageCompetitorPrice - productDetail.price) / productDetail.price * 100)}% گران‌تر از شما   `;
         avgBadgeClass = 'bg-green-50 text-green-700 border-green-200';
       } else {
         avgBadgeText = '=';
