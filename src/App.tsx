@@ -1003,18 +1003,21 @@ const ProductDetail = () => {
           </div>
         )}
 
-        <div className="bg-white p-4 rounded-xl shadow-md mb-4">
+        <div className="bg-white p-4 rounded-xl shadow-md mb-4 flex flex-col items-center">
           <h2 className="text-xl font-bold text-gray-800 mb-2">{productDetail.title}</h2>
           <p className="text-emerald-600 text-2xl font-bold mb-3">{formatPrice(productDetail.price)}</p>
 
           {/* Fresh competitors section - from live APIs only */}
           <div className="border-t border-gray-200 pt-3 mt-12">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-bold text-gray-800 text-xl">بررسی رقیب ها</h4>
-              <span className="text-sm text-gray-500">
-                {isLoadingConfirmedCompetitors ? 'در حال بارگذاری...' : `${confirmedCompetitorDetails.length} رقیب`}
+           <div className="flex flex-col items-center mb-3">
+              <h4 className="font-bold text-gray-800 text-2xl mb-6">بررسی رقیب ها</h4>
+              <span className="text-lg text-gray-500">
+                {isLoadingConfirmedCompetitors
+                  ? 'در حال بارگذاری...'
+                  : `${confirmedCompetitorDetails.length} رقیب`}
               </span>
             </div>
+
             
             {isLoadingConfirmedCompetitors ? (
               <LoadingSpinner />
@@ -1024,26 +1027,26 @@ const ProductDetail = () => {
               <>
                 <div className="mb-3 space-y-1">
                   {lowestCompetitor && (
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="font-semibold text-gray-800">کمترین قیمت رقیب:</span>
-                      <span className="text-blue-600 ml-1">{formatPrice(lowestCompetitor.price)}</span>
-                      <span className={`px-2 py-0.5 rounded text-xs border ${lowestBadgeClass}`}>
+                    <div className="flex flex-wrap items-center gap-2 text-lg">
+                      <span className="text-lg font-semibold text-gray-800">کمترین قیمت رقیب:</span>
+                      <span className="text-lg ml-1">{formatPrice(lowestCompetitor.price)}</span>
+                      <span className={`px-2 py-0.5 rounded text-md border ${lowestBadgeClass}`}>
                         {lowestBadgeText}
                       </span>
-                      <a
+                      {/* <a
                         href={lowestCompetitor.productUrl || `https://basalam.com/product/${lowestCompetitor.id}`}
                         target="_blank"
                         rel="noreferrer"
                         className="text-blue-600 hover:underline font-semibold"
                       >
                         مشاهده رقیب در باسلام
-                      </a>
+                      </a> */}
                     </div>
                   )}
                   {averageCompetitorPrice > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 text-sm mt-1">
+                    <div className="flex flex-wrap items-center gap-2 text-lg mt-1">
                       <span className="font-semibold">میانگین قیمت رقبا:</span> {formatPrice(averageCompetitorPrice)}
-                      <span className={`px-2 py-0.5 rounded text-xs border ${avgBadgeClass}`}>
+                      <span className={`px-2 py-0.5 rounded text-md border ${avgBadgeClass}`}>
                         {avgBadgeText}
                       </span>
                     </div>
@@ -1055,27 +1058,28 @@ const ProductDetail = () => {
                 <div className="flex items-center justify-center mb-3">
                   <button
                     onClick={() => setIsCompetitorsModalOpen(true)}
-                    className="py-2 px-4 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 transition duration-200 ease-in-out shadow-sm flex items-center gap-2"
+                    className="py-2 px-4 bg-orange-500 text-white text-lg font-medium rounded-lg hover:bg-orange-600 transition duration-200 ease-in-out shadow-sm flex items-center gap-2"
                   >
                     <Eye size={16} />
-                    مشاهده رقیب های انتخاب شده
+                    مشاهده همه رقیب های انتخاب شده
                   </button>
                 </div>
                 {/* Edit Now Button */}
-                <div className="m-12">
-                  <div className="flex justify-center m-3">
-                    <p className="text-lg text-emerald-700 leading-relaxed">
+                <div className="flex flex-col items-center m-12">
+                  <div className="m-3">
+                    <p className="text-lg text-emerald-700 leading-relaxed text-center">
                       میتونی قیمت محصولت رو ویرایش کنی
                     </p>
                   </div>
                   <button
                     onClick={() => window.open(`https://vendor.basalam.com/edit-product/${selectedProduct.id}`, '_blank')}
-                    className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 ease-in-out shadow-sm flex items-center justify-center gap-2"
+                    className="py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 ease-in-out shadow-sm flex items-center justify-center gap-2"
                   >
                     <Wrench size={18} />
                     ویرایش محصول
                   </button>
                 </div>
+
               </>
             ) : (
               <p className="text-gray-500 text-sm">هنوز رقیبی اضافه نشده است.</p>
@@ -1094,7 +1098,7 @@ const ProductDetail = () => {
         {/* Similar products can be toggled; competitors modal is independent */}
         {showSimilars && (
           <div ref={similarsContainerRef} className="bg-white p-4 rounded-xl shadow-md mb-4">
-            <h3 className="text-lg font-bold text-gray-800 mb-3">اضافه کردن رقیب های جدید:</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-3">اضافه کردن رقیب های جدید:</h3>
             {/* Local search box for similar products */}
             {hasFetchedSimilars ? (
               <>
