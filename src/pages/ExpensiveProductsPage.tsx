@@ -86,7 +86,7 @@ const ExpensiveProductsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header title="محصولات با قیمت غیر رقابتی" onBack={() => navigate('dashboard')} />
+      <Header title="محصولات با قیمت نامناسب" onBack={() => navigate('dashboard')} />
       <div className="p-4 flex flex-col space-y-4">
         {/* Reevaluate Button */}
         <button
