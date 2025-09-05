@@ -61,7 +61,7 @@ const ProductDetail = () => {
       setIsLoadingProductDetail(true);
       setProductDetailError(null);
       try {
-        const url = `https://bardia1234567far.app.n8n.cloud/webhook/product?id=${selectedProduct.id}`;
+        const url = `${apiUrl}${selectedProduct.id}`;
         const res = await authorizedFetch(url, {
           headers: {
             Authorization: `Bearer ${basalamToken}`,
@@ -319,7 +319,7 @@ const ProductDetail = () => {
           while (idx < toFetch.length && !cancelled) {
             const current = toFetch[idx++];
             try {
-              const r = await fetch(`https://bardia1234567far.app.n8n.cloud/webhook/product?id=${current.op_product}`);
+              const r = await fetch(`${apiUrl}${current.op_product}`);
               const d = await r.json().catch(() => ({}));
               const parsed = parseCoreDetail(d);
               parsed.vendorIdentifier = current.op_vendor;
