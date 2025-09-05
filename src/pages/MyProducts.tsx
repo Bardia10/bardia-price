@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from "react";
-import { AppContext } from "../App";
+import { AppContext } from "../context/AppContext";
 import { Header } from "../components/Header";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { MyProductCard } from "../components/MyProductCard";

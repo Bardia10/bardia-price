@@ -1,6 +1,6 @@
 import React, { useState, useContext } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { AppContext } from "../App"; // for now, until we move AppContext out
+import { AppContext } from "../context/AppContext"; // for now, until we move AppContext out
 
 const LoginPage: React.FC = () => {
   const { setBasalamToken, navigate, setGlobalLoading } = useContext(AppContext);

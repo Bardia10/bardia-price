@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useContext, createContext, useRef, useCallback, useMemo } from 'react';
-import { Search, ChevronLeft, Package, Sparkles, AlertCircle, Eye, EyeOff, Settings, X, ExternalLink, Wrench, SlidersHorizontal, RotateCcw, BadgeCheck } from 'lucide-react';
 import LoginPage from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
 import ExpensiveProductsPage from "./pages/ExpensiveProductsPage";
@@ -17,11 +16,14 @@ import { MyProductCard } from "./components/MyProductCard";
 // utils
 import { formatPrice } from "./lib/format";
 
+//context
+import { AppContext } from "./context/AppContext";
+
 
 
 
 // Loosely typed app context for speed; can be refined later
-export const AppContext = createContext<any>(null);
+// export const AppContext = createContext<any>(null);
 
 
 

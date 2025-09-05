@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { AppContext } from "../App";
+import { AppContext } from "../context/AppContext";
 import { Package, AlertCircle } from "lucide-react";
 
 const Dashboard = () => {
