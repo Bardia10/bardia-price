@@ -1,8 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import { AppContext } from "../App";
-import {Header} from "../App";
-import {LoadingSpinner} from "../App";
-import {MyProductCard} from "../App";
+import {Header} from "../components/Header";
+import {LoadingSpinner} from "../components/LoadingSpinner";
+import {MyProductCard} from "../components/MyProductCard";
 
 const ExpensiveProductsPage = () => {
   const [isReevaluateModalOpen, setIsReevaluateModalOpen] = useState(false);
