@@ -410,7 +410,10 @@ useEffect(() => {
     isProcessingQueueRef.current = false;
   };
 
-  const addAsCompetitor = (similarProduct: any) => {
+  // Temporary placeholder type
+  type SearchProduct = any;
+  const addAsCompetitor = (similarProduct: SearchProduct) => {
+    
     if (!selectedProduct?.id || !similarProduct?.id || !similarProduct?.vendorIdentifier) {
       setToast({ message: 'اطلاعات محصول ناقص است', type: 'error' });
       setTimeout(() => setToast(null), 2000);
@@ -418,49 +421,17 @@ useEffect(() => {
     }
 
     const productId = similarProduct.id;
-    // Check if already adding this competitor
-    if (addingCompetitorIds.has(productId)) {
-      return;
-    }
-    // Immediately set loading state so UI updates
+
+    if (addingCompetitorIds.has(productId)) return;
+
     setAddingCompetitorIds(prev => new Set([...prev, productId]));
 
     addCompetitorQueueRef.current.push(async () => {
       try {
-        const requestBody = {
-          self_product: Number(selectedProduct.id),
-          op_product: Number(similarProduct.id),
-          op_vendor: similarProduct.vendorIdentifier
-        };
+        await productService.addCompetitor(authorizedFetch, selectedProduct.id, similarProduct.id, similarProduct.vendorIdentifier);
 
-        const response = await authorizedFetch(apiUrl+'/competitors', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody)
-        });
-
-        let data: any = null;
-        try { 
-          data = await response.json(); 
-        } catch {}
-
-        if (response.status === 401) {
-          setBasalamToken('');
-          navigate('login');
-          setToast({ message: 'باید دوباره لاگین کنید', type: 'error' });
-          setTimeout(() => setToast(null), 3000);
-          return;
-        }
-        if (!response.ok) {
-          const message = (data && (data.message || data.error)) || 'خطا در افزودن رقیب';
-          throw new Error(message);
-        }
-
-        // Update the visual state to show it's been added
-        setSearchResults((prevResults) => 
-          prevResults.map((s: any) =>
+        setSearchResults(prevResults =>
+          prevResults.map((s: SearchProduct) =>
             s.id === similarProduct.id ? { ...s, isCompetitor: true } : s
           )
         );
@@ -468,17 +439,11 @@ useEffect(() => {
         setToast({ message: `"${similarProduct.title}" به عنوان رقیب اضافه شد`, type: 'success' });
         setTimeout(() => setToast(null), 3000);
 
-        // Refresh confirmed competitors list after a short delay
-        setTimeout(() => {
-          // Trigger a re-fetch by updating the refresh trigger
-          setRefreshTrigger(prev => prev + 1);
-        }, 1000);
-
+        setTimeout(() => setRefreshTrigger(prev => prev + 1), 1000);
       } catch (error: any) {
         setToast({ message: error?.message || 'خطا در افزودن رقیب', type: 'error' });
         setTimeout(() => setToast(null), 3000);
       } finally {
-        // Remove from loading set
         setAddingCompetitorIds(prev => {
           const newSet = new Set(prev);
           newSet.delete(productId);
@@ -486,6 +451,7 @@ useEffect(() => {
         });
       }
     });
+
     processAddCompetitorQueue();
   };
 

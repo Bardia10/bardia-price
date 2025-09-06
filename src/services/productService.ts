@@ -79,26 +79,26 @@ export async function searchSimilarProducts(
   };
 }
 
-export async function addCompetitor(
-  authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
-  selfProductId: number | string,
-  opProductId: number | string,
-  opVendor: string
-) {
-  const url = apiUrl(`/competitors`);
-  const res = await authorizedFetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      self_product: Number(selfProductId),
-      op_product: Number(opProductId),
-      op_vendor: opVendor
-    })
-  });
-  const data = await safeJson(res);
-  if (!res.ok) throw new ApiError(res.status, (data && (data.message || data.error)) || "خطا در افزودن رقیب", data);
-  return data;
-}
+// export async function addCompetitor(
+//   authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
+//   selfProductId: number | string,
+//   opProductId: number | string,
+//   opVendor: string
+// ) {
+//   const url = apiUrl(`/competitors`);
+//   const res = await authorizedFetch(url, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify({
+//       self_product: Number(selfProductId),
+//       op_product: Number(opProductId),
+//       op_vendor: opVendor
+//     })
+//   });
+//   const data = await safeJson(res);
+//   if (!res.ok) throw new ApiError(res.status, (data && (data.message || data.error)) || "خطا در افزودن رقیب", data);
+//   return data;
+// }
 
 export async function deleteCompetitor(
   authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
@@ -131,3 +131,27 @@ export async function manageExpensive(
 
 
 
+
+/** Add competitor: POST /competitors */
+export async function addCompetitor(
+  authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
+  selfProductId: number | string,
+  opProductId: number | string,
+  opVendor: string
+) {
+  const url = apiUrl(`/competitors`);
+  const res = await authorizedFetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      self_product: Number(selfProductId),
+      op_product: Number(opProductId),
+      op_vendor: opVendor
+    }),
+  });
+  const data = await safeJson(res);
+  if (!res.ok) {
+    throw new ApiError(res.status, (data && (data.message || data.error)) || "خطا در افزودن رقیب", data);
+  }
+  return data;
+}
