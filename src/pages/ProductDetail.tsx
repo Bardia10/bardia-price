@@ -270,135 +270,129 @@ const ProductDetail = () => {
 
   // Fresh, simplified competitor fetch: rely solely on webhook + Basalam core; ignore dummy data
   useEffect(() => {
-    const productId = selectedProduct?.id ? String(selectedProduct.id) : '';
-    const isNumericId = /^\d+$/.test(productId);
-    if (!basalamToken || !selectedProduct || !isNumericId) {
-      setConfirmedCompetitorDetails([]);
-      setConfirmedCompetitorsError(null);
-      return;
-    }
-    let cancelled = false;
-    const parseCoreDetail = (data: any, vendorIdentifier: string): ConfirmedCompetitorDetail => {
-      const id = Number(data?.id ?? data?.product?.id) || 0;
-      const title = (data?.title ?? data?.product?.title) || '';
-      const price = Number(
-        data?.price ??
-        data?.variants?.[0]?.price ??
-        data?.product?.price ??
-        data?.product?.variants?.[0]?.price ??
-        0
-      ) || 0;
-      const photoObj = data?.photo || data?.product?.photo || null;
-      const photo = (typeof photoObj === 'string') ? photoObj : (photoObj?.md || photoObj?.original || photoObj?.sm || photoObj?.xs || '');
-      return {
-        id,
-        title,
-        price,
-        photo,
-        vendorIdentifier,
-        productUrl: `https://basalam.com/${encodeURIComponent(vendorIdentifier)}/product/${encodeURIComponent(id)}`
-      };
-    };
+      const productId = selectedProduct?.id ? String(selectedProduct.id) : "";
+      const isNumericId = /^\d+$/.test(productId);
 
-    const run = async () => {
-      setIsLoadingConfirmedCompetitors(true);
-      setConfirmedCompetitorsError(null);
-      try {
-        const url = `${apiUrl}/competitors?product_id=${productId}`;
-        const res = await authorizedFetch(url);
-        if (res.status === 401) {
-          setBasalamToken('');
-          navigate('login');
-          setConfirmedCompetitorsError('باید دوباره لاگین کنید');
-          setIsLoadingConfirmedCompetitors(false);
-          return;
-        }
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error((data && (data.message || data.error)) || 'خطا در دریافت رقبا');
-        const list = Array.isArray(data) ? (data[0]?.competitors || []) : (data?.competitors || []);
-        const items = (Array.isArray(list) ? list : [])
-          .filter((c: any) => c && c.op_product)
-          .map((c: any) => ({ op_product: Number(c.op_product), op_vendor: String(c.op_vendor || '') }));
-        // Batch fetch competitor details using /bulk_products
-        const competitorIds = items.map(i => i.op_product);
-        if (competitorIds.length === 0) {
-          setConfirmedCompetitorDetails([]);
-          setIsLoadingConfirmedCompetitors(false);
-          return;
-        }
-        const bulkRes = await authorizedFetch(`${apiUrl}/bulk_products`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${basalamToken}`,
-          },
-          body: JSON.stringify({ product_ids: competitorIds })
-        });
-        const bulkData = await bulkRes.json().catch(() => ({}));
-        if (!bulkRes.ok) throw new Error((bulkData && (bulkData.message || bulkData.error)) || 'خطا در دریافت اطلاعات رقبا');
-        const products = Array.isArray(bulkData?.data) ? bulkData.data : [];
-        // Map products to details, matching vendorIdentifier from items
-        const details: ConfirmedCompetitorDetail[] = products.map((prod: any) => {
-          const vendorIdentifier = items.find(i => i.op_product === prod.id)?.op_vendor || '';
-          return parseCoreDetail(prod, vendorIdentifier);
-        });
-        if (!cancelled) setConfirmedCompetitorDetails(details);
-      } catch (e: any) {
-        if (!cancelled) setConfirmedCompetitorsError(e?.message || 'خطای نامشخص');
-      } finally {
-        if (!cancelled) setIsLoadingConfirmedCompetitors(false);
+      if (!basalamToken || !selectedProduct || !isNumericId) {
+        setConfirmedCompetitorDetails([]);
+        setConfirmedCompetitorsError(null);
+        return;
       }
-    };
-    run();
-    return () => { cancelled = true; };
-  }, [authorizedFetch, basalamToken, selectedProduct, refreshTrigger, refreshKey]);
+
+      let cancelled = false;
+
+      const parseCoreDetail = (data: any, vendorIdentifier: string): ConfirmedCompetitorDetail => {
+        const id = Number(data?.id ?? data?.product?.id) || 0;
+        const title = (data?.title ?? data?.product?.title) || "";
+        const price =
+          Number(
+            data?.price ??
+              data?.variants?.[0]?.price ??
+              data?.product?.price ??
+              data?.product?.variants?.[0]?.price ??
+              0
+          ) || 0;
+        const photoObj = data?.photo || data?.product?.photo || null;
+        const photo =
+          typeof photoObj === "string"
+            ? photoObj
+            : photoObj?.md || photoObj?.original || photoObj?.sm || photoObj?.xs || "";
+        return {
+          id,
+          title,
+          price,
+          photo,
+          vendorIdentifier,
+          productUrl: `https://basalam.com/${encodeURIComponent(vendorIdentifier)}/product/${encodeURIComponent(id)}`
+        };
+      };
+
+      const run = async () => {
+        setIsLoadingConfirmedCompetitors(true);
+        setConfirmedCompetitorsError(null);
+
+        try {
+          // 1) fetch competitors (via service)
+          const compData = await productService.fetchCompetitors(authorizedFetch, productId);
+
+          // Normalize shape: could be array or object
+          const list = Array.isArray(compData) ? (compData[0]?.competitors || []) : (compData?.competitors || []);
+          const items = (Array.isArray(list) ? list : [])
+            .filter((c: any) => c && c.op_product)
+            .map((c: any) => ({ op_product: Number(c.op_product), op_vendor: String(c.op_vendor || "") }));
+
+          // Collect numeric competitor ids
+          const competitorIds = items.map(i => i.op_product);
+
+          if (competitorIds.length === 0) {
+            if (!cancelled) setConfirmedCompetitorDetails([]);
+            return;
+          }
+
+          // 2) bulk fetch details for competitor ids (via service)
+          const bulkData = await productService.fetchBulkProducts(authorizedFetch, competitorIds);
+          const products = Array.isArray(bulkData?.data) ? bulkData.data : [];
+
+          // Map and attach vendor info from items
+          const details: ConfirmedCompetitorDetail[] = products.map((prod: any) => {
+            const vendorIdentifier = items.find(i => i.op_product === prod.id)?.op_vendor || "";
+            return parseCoreDetail(prod, vendorIdentifier);
+          });
+
+          if (!cancelled) setConfirmedCompetitorDetails(details);
+        } catch (err: any) {
+          // 401 handling: clear token and navigate to login (same UX as before)
+          if (err instanceof ApiError && err.status === 401) {
+            setBasalamToken("");
+            navigate("login");
+            if (!cancelled) setConfirmedCompetitorsError("باید دوباره لاگین کنید");
+          } else {
+            if (!cancelled) setConfirmedCompetitorsError(err?.message || "خطای نامشخص");
+          }
+        } finally {
+          if (!cancelled) setIsLoadingConfirmedCompetitors(false);
+        }
+      };
+
+      run();
+      return () => {
+        cancelled = true;
+      };
+    }, [authorizedFetch, basalamToken, selectedProduct, refreshTrigger, refreshKey]);
+
    // Auto-manage product in expensives based on price comparison with competitors
-   useEffect(() => {
-    if (!selectedProduct?.id || !productDetail?.price || confirmedCompetitorDetails.length === 0 || !basalamToken) {
-      return;
-    }
+useEffect(() => {
+      if (!selectedProduct?.id || !productDetail?.price || confirmedCompetitorDetails.length === 0 || !basalamToken) {
+        return;
+      }
 
-    const priced = confirmedCompetitorDetails.filter(c => typeof c.price === 'number' && c.price > 0);
-    if (priced.length === 0) return;
+      const priced = confirmedCompetitorDetails.filter(c => typeof c.price === "number" && c.price > 0);
+      if (priced.length === 0) return;
 
-    const lowest = priced.reduce((min, c) => (c.price < min.price ? c : min), priced[0]);
+      const lowest = priced.reduce((min, c) => (c.price < min.price ? c : min), priced[0]);
 
-    const manageProductInExpensives = async (method: 'DELETE' | 'PUT') => {
-      try {
-        const response = await authorizedFetch(apiUrl+'/expensives', {
-          method: method,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${basalamToken}`,
-          },
-          body: JSON.stringify({
-            product_id: selectedProduct.id
-          })
-        });
-
-        if (response.ok) {
-          if (method === 'DELETE') {
+      const run = async () => {
+        try {
+          if (productDetail.price < lowest.price) {
+            await productService.manageExpensive(authorizedFetch, selectedProduct.id, "DELETE");
             console.log(`Product ${selectedProduct.id} deleted from expensives - price lower than competitors`);
           } else {
+            await productService.manageExpensive(authorizedFetch, selectedProduct.id, "PUT");
             console.log(`Product ${selectedProduct.id} added to expensives - price not lower than competitors`);
           }
-        } else {
-          console.error(`Failed to ${method === 'DELETE' ? 'delete' : 'add'} product from/to expensives`);
+        } catch (err: any) {
+          if (err instanceof ApiError && err.status === 401) {
+            setBasalamToken("");
+            navigate("login");
+            console.error("باید دوباره لاگین کنید");
+          } else {
+            console.error(err?.message || "خطا در مدیریت expensives");
+          }
         }
-      } catch (error) {
-        console.error(`Error ${method === 'DELETE' ? 'deleting' : 'adding'} product ${method === 'DELETE' ? 'from' : 'to'} expensives:`, error);
-      }
-    };
+      };
 
-    // If productDetail's price is lower than the lowest competitor's price
-    if (productDetail.price < lowest.price) {
-      manageProductInExpensives('DELETE');
-    } else {
-      // If productDetail's price is NOT lower than the lowest competitor's price
-      manageProductInExpensives('PUT');
-    }
-  }, [confirmedCompetitorDetails, productDetail, selectedProduct, authorizedFetch, basalamToken]);
-
+      run();
+    }, [confirmedCompetitorDetails, productDetail, selectedProduct, authorizedFetch, basalamToken]);
 
   const handleScroll = useCallback(() => {
     const scrollPosition = window.scrollY;
