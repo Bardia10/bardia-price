@@ -11,6 +11,7 @@ const ExpensiveProductsPage = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
   // Map API product shape to internal Product type
   const mapExpensiveProduct = (p: any) => {
@@ -50,7 +51,7 @@ const ExpensiveProductsPage = () => {
     setGlobalLoading(true);
     setApiError(null);
     try {
-      const res = await authorizedFetch('https://bardia1234567far.app.n8n.cloud/webhook/expensives');
+      const res = await authorizedFetch(apiUrl+'/expensives');
       let data: any = null;
       try { data = await res.json(); } catch {}
       if (!res.ok) {
@@ -123,7 +124,7 @@ const ExpensiveProductsPage = () => {
                       setIsLoading(true);
                       setGlobalLoading(true);
                       try {
-                        await authorizedFetch('https://bardia1234567far.app.n8n.cloud/webhook/expensives', {
+                        await authorizedFetch(apiUrl+'/expensives', {
                           method: 'POST',
                           headers: {
                             'Authorization': `Bearer ${basalamToken}`,
