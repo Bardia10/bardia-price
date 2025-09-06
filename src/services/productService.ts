@@ -55,17 +55,28 @@ export async function fetchBulkProducts(
   return data;
 }
 
+/** Search similar products: /mlt-search endpoint */
 export async function searchSimilarProducts(
   authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
   title: string,
-  productId: string | number,
-  page = 1
+  productId: number | string,
+  page: number = 1
 ) {
-  const url = apiUrl(`/mlt-search?title=${encodeURIComponent(title)}&product_id=${encodeURIComponent(String(productId))}&page=${page}`);
+  const encodedTitle = encodeURIComponent(title.trim());
+  const encodedId = encodeURIComponent(String(productId));
+  const url = apiUrl(`/mlt-search?title=${encodedTitle}&product_id=${encodedId}&page=${page}`);
+
   const res = await authorizedFetch(url);
   const data = await safeJson(res);
-  if (!res.ok) throw new ApiError(res.status, (data && (data.message || data.error)) || "خطا در جستجوی محصولات مشابه", data);
-  return data;
+
+  if (!res.ok) {
+    throw new ApiError(res.status, (data && (data.message || data.error)) || "خطا در جستجوی محصولات مشابه", data);
+  }
+
+  return {
+    products: Array.isArray(data?.products) ? data.products : [],
+    page: typeof data?.page === "number" ? data.page : page,
+  };
 }
 
 export async function addCompetitor(
@@ -117,3 +128,6 @@ export async function manageExpensive(
   if (!res.ok) throw new ApiError(res.status, (data && (data.message || data.error)) || "خطا در مدیریت expensives", data);
   return data;
 }
+
+
+

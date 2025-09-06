@@ -122,20 +122,18 @@ const ProductDetail = () => {
   const handleDeleteCompetitor = async (competitorId: number) => {
     if (deletingCompetitorIds.has(competitorId)) return;
     setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
+
     try {
-      const res = await authorizedFetch(
-        `${apiUrl}/competitors?product_id=${selectedProduct.id}&op_product=${competitorId}`,
-        { method: 'DELETE' }
-      );
-      if (res.status === 401) {
-        setBasalamToken('');
-        navigate('login');
-        alert('باید دوباره لاگین کنید');
-        return;
+      await productService.deleteCompetitor(authorizedFetch, selectedProduct.id, competitorId);
+      setRefreshTrigger(v => v + 1);
+    } catch (err: any) {
+      if (err instanceof ApiError && err.status === 401) {
+        setBasalamToken("");
+        navigate("login");
+        alert("باید دوباره لاگین کنید");
+      } else {
+        alert(err?.message || "خطا در حذف رقیب.");
       }
-      setRefreshTrigger((v) => v + 1);
-    } catch (e) {
-      alert('خطا در حذف رقیب.');
     } finally {
       setDeletingCompetitorIds(prev => {
         const next = new Set(prev);
@@ -188,6 +186,7 @@ const ProductDetail = () => {
   };
 
   // Fetch similar products from search API (with pagination)
+
   const fetchSimilarProducts = useCallback(async () => {
     if (!selectedProduct || !basalamToken || !selectedProduct.title || !selectedProduct.id) {
       setSearchResults([]);
@@ -195,74 +194,64 @@ const ProductDetail = () => {
       setHasMoreSimilarPages(true);
       return;
     }
+
     setIsLoadingSearch(true);
     setGlobalLoading(true);
     setSearchError(null);
+
     try {
-      const encodedTitle = encodeURIComponent(selectedProduct.title.trim());
-      const productId = encodeURIComponent(String(selectedProduct.id));
-      const url = `${apiUrl}/mlt-search?title=${encodedTitle}&product_id=${productId}&page=1`;
-      const res = await authorizedFetch(url);
-      if (res.status === 401) {
-        setBasalamToken('');
-        navigate('login');
-        setSearchError('باید دوباره لاگین کنید');
-        setIsLoadingSearch(false);
-        setGlobalLoading(false);
-        return;
-      }
-      let data: any = null;
-      try { data = await res.json(); } catch {}
-      if (!res.ok) {
-        const message = (data && (data.message || data.error)) || 'خطا در جستجوی محصولات مشابه';
-        throw new Error(message);
-      }
-      // New API response: { products: [...], page: number }
-      const products = Array.isArray(data?.products) ? data.products.map(mapSearchProduct).filter((p: any) => p.id && p.title) : [];
-      const realPage = typeof data?.page === 'number' ? data.page : 1;
-      setSearchResults(products);
-      setSimilarPage(realPage + 1); // Next page to request
-      setHasMoreSimilarPages(products.length > 0);
+      const { products, page } = await productService.searchSimilarProducts(
+        authorizedFetch,
+        selectedProduct.title,
+        selectedProduct.id,
+        1
+      );
+
+      const mapped = products.map(mapSearchProduct).filter((p: any) => p.id && p.title);
+      setSearchResults(mapped);
+      setSimilarPage(page + 1);
+      setHasMoreSimilarPages(mapped.length > 0);
       setHasFetchedSimilars(true);
-    } catch (e: any) {
-      setSearchError(e?.message || 'خطای نامشخص در جستجو');
+    } catch (err: any) {
+      if (err instanceof ApiError && err.status === 401) {
+        setBasalamToken("");
+        navigate("login");
+        setSearchError("باید دوباره لاگین کنید");
+      } else {
+        setSearchError(err?.message || "خطای نامشخص در جستجو");
+      }
     } finally {
       setIsLoadingSearch(false);
       setGlobalLoading(false);
     }
   }, [selectedProduct, basalamToken, authorizedFetch, setGlobalLoading, mapSearchProduct]);
 
-  // Load more similar products
   const loadMoreSimilars = useCallback(async () => {
     if (!selectedProduct || !basalamToken || !selectedProduct.title || !selectedProduct.id || isLoadingMoreSimilars || !hasMoreSimilarPages) return;
+
     setIsLoadingMoreSimilars(true);
     setSearchError(null);
+
     try {
-      const encodedTitle = encodeURIComponent(selectedProduct.title.trim());
-      const productId = encodeURIComponent(String(selectedProduct.id));
-      const url = `${apiUrl}/mlt-search?title=${encodedTitle}&product_id=${productId}&page=${similarPage}`;
-      const res = await authorizedFetch(url);
-      if (res.status === 401) {
-        setBasalamToken('');
-        navigate('login');
-        setSearchError('باید دوباره لاگین کنید');
-        setIsLoadingMoreSimilars(false);
-        return;
+      const { products, page } = await productService.searchSimilarProducts(
+        authorizedFetch,
+        selectedProduct.title,
+        selectedProduct.id,
+        similarPage
+      );
+
+      const mapped = products.map(mapSearchProduct).filter((p: any) => p.id && p.title);
+      setSearchResults(prev => [...prev, ...mapped]);
+      setSimilarPage(page + 1);
+      setHasMoreSimilarPages(mapped.length > 0);
+    } catch (err: any) {
+      if (err instanceof ApiError && err.status === 401) {
+        setBasalamToken("");
+        navigate("login");
+        setSearchError("باید دوباره لاگین کنید");
+      } else {
+        setSearchError(err?.message || "خطای نامشخص در جستجو");
       }
-      let data: any = null;
-      try { data = await res.json(); } catch {}
-      if (!res.ok) {
-        const message = (data && (data.message || data.error)) || 'خطا در جستجوی محصولات مشابه';
-        throw new Error(message);
-      }
-      // New API response: { products: [...], page: number }
-      const products = Array.isArray(data?.products) ? data.products.map(mapSearchProduct).filter((p: any) => p.id && p.title) : [];
-      const realPage = typeof data?.page === 'number' ? data.page : similarPage;
-      setSearchResults(prev => [...prev, ...products]);
-      setSimilarPage(realPage + 1); // Next page to request
-      setHasMoreSimilarPages(products.length > 0);
-    } catch (e: any) {
-      setSearchError(e?.message || 'خطای نامشخص در جستجو');
     } finally {
       setIsLoadingMoreSimilars(false);
     }
