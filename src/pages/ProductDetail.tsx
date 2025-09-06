@@ -17,6 +17,10 @@ import { formatPrice } from "../lib/format";
 //icons
 import { Search, ChevronLeft, Package, Sparkles, AlertCircle, Eye, EyeOff, Settings, X, ExternalLink, Wrench, SlidersHorizontal, RotateCcw, BadgeCheck } from 'lucide-react';
 
+import * as productService from "../services/productService";
+import { ApiError } from "../services/apiError";
+import { apiUrl } from "../lib/api"; // optional: only if you need
+
 
 
 
@@ -24,7 +28,7 @@ import { Search, ChevronLeft, Package, Sparkles, AlertCircle, Eye, EyeOff, Setti
 
 
 const ProductDetail = () => {
-  const apiUrl = import.meta.env.VITE_BACKEND_URL;
+  // const apiUrl = import.meta.env.VITE_BACKEND_URL;
   // Local search for similar products
   const [similarSearchTerm, setSimilarSearchTerm] = useState('');
   // Refresh key to trigger re-fetch
@@ -57,29 +61,28 @@ const ProductDetail = () => {
       return;
     }
     let cancelled = false;
-    const fetchDetail = async () => {
+    const run = async () => {
       setIsLoadingProductDetail(true);
       setProductDetailError(null);
       try {
-        const url = `${apiUrl}/product?id=${selectedProduct.id}`;
-        const res = await authorizedFetch(url, {
-          headers: {
-            Authorization: `Bearer ${basalamToken}`,
-          },
-        });
-        let data = null;
-        try { data = await res.json(); } catch {}
-        if (!res.ok) throw new Error((data && (data.message || data.error)) || 'خطا در دریافت اطلاعات محصول');
+        const data = await productService.fetchProductDetail(authorizedFetch, selectedProduct.id);
         if (!cancelled) setProductDetail(data);
-      } catch (e: any) {
-        if (!cancelled) setProductDetailError(e?.message || 'خطای نامشخص');
+      } catch (err: any) {
+        if (err instanceof ApiError && err.status === 401) {
+          setBasalamToken('');
+          navigate('login');
+          if (!cancelled) setProductDetailError('باید دوباره لاگین کنید');
+        } else {
+          if (!cancelled) setProductDetailError(err?.message || 'خطای نامشخص');
+        }
       } finally {
         if (!cancelled) setIsLoadingProductDetail(false);
       }
     };
-    fetchDetail();
+    run();
     return () => { cancelled = true; };
   }, [selectedProduct?.id, basalamToken, authorizedFetch, refreshKey]);
+
 
   // --- Existing states ---
   const [showOriginalProductFloating, setShowOriginalProductFloating] = useState(false);
