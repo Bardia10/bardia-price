@@ -275,7 +275,7 @@ const ProductDetail = () => {
       return;
     }
     let cancelled = false;
-    const parseCoreDetail = (data: any): ConfirmedCompetitorDetail => {
+    const parseCoreDetail = (data: any, vendorIdentifier: string): ConfirmedCompetitorDetail => {
       const id = Number(data?.id ?? data?.product?.id) || 0;
       const title = (data?.title ?? data?.product?.title) || '';
       const price = Number(
@@ -287,8 +287,14 @@ const ProductDetail = () => {
       ) || 0;
       const photoObj = data?.photo || data?.product?.photo || null;
       const photo = (typeof photoObj === 'string') ? photoObj : (photoObj?.md || photoObj?.original || photoObj?.sm || photoObj?.xs || '');
-      // vendor identifier comes from competitors API; fill later when mapping
-      return { id, title, price, photo, vendorIdentifier: '', productUrl: '' };
+      return {
+        id,
+        title,
+        price,
+        photo,
+        vendorIdentifier,
+        productUrl: `https://basalam.com/${encodeURIComponent(vendorIdentifier)}/product/${encodeURIComponent(id)}`
+      };
     };
 
     const run = async () => {
@@ -310,29 +316,29 @@ const ProductDetail = () => {
         const items = (Array.isArray(list) ? list : [])
           .filter((c: any) => c && c.op_product)
           .map((c: any) => ({ op_product: Number(c.op_product), op_vendor: String(c.op_vendor || '') }));
-        // Fetch details with caching
-        const details: ConfirmedCompetitorDetail[] = [];
-        const toFetch = items.filter(i => !competitorDetailCacheRef.current.has(i.op_product));
-        // Limit concurrency
-        let idx = 0; const concurrency = 3;
-        const worker = async () => {
-          while (idx < toFetch.length && !cancelled) {
-            const current = toFetch[idx++];
-            try {
-              const r = await fetch(`${apiUrl}/product?id=${current.op_product}`);
-              const d = await r.json().catch(() => ({}));
-              const parsed = parseCoreDetail(d);
-              parsed.vendorIdentifier = current.op_vendor;
-              parsed.productUrl = `https://basalam.com/${encodeURIComponent(current.op_vendor)}/product/${encodeURIComponent(current.op_product)}`;
-              competitorDetailCacheRef.current.set(current.op_product, parsed);
-            } catch {}
-          }
-        };
-        await Promise.all(new Array(concurrency).fill(0).map(worker));
-        for (const it of items) {
-          const detail = competitorDetailCacheRef.current.get(it.op_product);
-          if (detail) details.push(detail);
+        // Batch fetch competitor details using /bulk_products
+        const competitorIds = items.map(i => i.op_product);
+        if (competitorIds.length === 0) {
+          setConfirmedCompetitorDetails([]);
+          setIsLoadingConfirmedCompetitors(false);
+          return;
         }
+        const bulkRes = await authorizedFetch(`${apiUrl}/bulk_products`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${basalamToken}`,
+          },
+          body: JSON.stringify({ product_ids: competitorIds })
+        });
+        const bulkData = await bulkRes.json().catch(() => ({}));
+        if (!bulkRes.ok) throw new Error((bulkData && (bulkData.message || bulkData.error)) || 'خطا در دریافت اطلاعات رقبا');
+        const products = Array.isArray(bulkData?.data) ? bulkData.data : [];
+        // Map products to details, matching vendorIdentifier from items
+        const details: ConfirmedCompetitorDetail[] = products.map((prod: any) => {
+          const vendorIdentifier = items.find(i => i.op_product === prod.id)?.op_vendor || '';
+          return parseCoreDetail(prod, vendorIdentifier);
+        });
         if (!cancelled) setConfirmedCompetitorDetails(details);
       } catch (e: any) {
         if (!cancelled) setConfirmedCompetitorsError(e?.message || 'خطای نامشخص');
