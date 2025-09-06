@@ -24,7 +24,7 @@ import { Search, ChevronLeft, Package, Sparkles, AlertCircle, Eye, EyeOff, Setti
 
 
 const ProductDetail = () => {
-  const apiUrl = import.meta.env.VITE_GET_PRODUCTS_URL;
+  const apiUrl = import.meta.env.VITE_BACKEND_URL;
   // Local search for similar products
   const [similarSearchTerm, setSimilarSearchTerm] = useState('');
   // Refresh key to trigger re-fetch
@@ -61,7 +61,7 @@ const ProductDetail = () => {
       setIsLoadingProductDetail(true);
       setProductDetailError(null);
       try {
-        const url = `${apiUrl}${selectedProduct.id}`;
+        const url = `${apiUrl}/product?id=${selectedProduct.id}`;
         const res = await authorizedFetch(url, {
           headers: {
             Authorization: `Bearer ${basalamToken}`,
@@ -121,7 +121,7 @@ const ProductDetail = () => {
     setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
     try {
       const res = await authorizedFetch(
-        `https://bardia1234567far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${competitorId}`,
+        `${apiUrl}/competitors?product_id=${selectedProduct.id}&op_product=${competitorId}`,
         { method: 'DELETE' }
       );
       if (res.status === 401) {
@@ -198,7 +198,7 @@ const ProductDetail = () => {
     try {
       const encodedTitle = encodeURIComponent(selectedProduct.title.trim());
       const productId = encodeURIComponent(String(selectedProduct.id));
-      const url = `https://bardia1234567far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=1`;
+      const url = `${apiUrl}/mlt-search?title=${encodedTitle}&product_id=${productId}&page=1`;
       const res = await authorizedFetch(url);
       if (res.status === 401) {
         setBasalamToken('');
@@ -237,7 +237,7 @@ const ProductDetail = () => {
     try {
       const encodedTitle = encodeURIComponent(selectedProduct.title.trim());
       const productId = encodeURIComponent(String(selectedProduct.id));
-      const url = `https://bardia1234567far.app.n8n.cloud/webhook/mlt-search?title=${encodedTitle}&product_id=${productId}&page=${similarPage}`;
+      const url = `${apiUrl}/mlt-search?title=${encodedTitle}&product_id=${productId}&page=${similarPage}`;
       const res = await authorizedFetch(url);
       if (res.status === 401) {
         setBasalamToken('');
@@ -295,7 +295,7 @@ const ProductDetail = () => {
       setIsLoadingConfirmedCompetitors(true);
       setConfirmedCompetitorsError(null);
       try {
-        const url = `https://bardia1234567far.app.n8n.cloud/webhook/competitors?product_id=${productId}`;
+        const url = `${apiUrl}/competitors?product_id=${productId}`;
         const res = await authorizedFetch(url);
         if (res.status === 401) {
           setBasalamToken('');
@@ -319,7 +319,7 @@ const ProductDetail = () => {
           while (idx < toFetch.length && !cancelled) {
             const current = toFetch[idx++];
             try {
-              const r = await fetch(`${apiUrl}${current.op_product}`);
+              const r = await fetch(`${apiUrl}/product?id=${current.op_product}`);
               const d = await r.json().catch(() => ({}));
               const parsed = parseCoreDetail(d);
               parsed.vendorIdentifier = current.op_vendor;
@@ -356,7 +356,7 @@ const ProductDetail = () => {
 
     const manageProductInExpensives = async (method: 'DELETE' | 'PUT') => {
       try {
-        const response = await authorizedFetch('https://bardia1234567far.app.n8n.cloud/webhook/expensives', {
+        const response = await authorizedFetch(apiUrl+'/expensives', {
           method: method,
           headers: {
             'Content-Type': 'application/json',
@@ -441,7 +441,7 @@ const ProductDetail = () => {
           op_vendor: similarProduct.vendorIdentifier
         };
 
-        const response = await authorizedFetch('https://bardia1234567far.app.n8n.cloud/webhook/competitors', {
+        const response = await authorizedFetch(apiUrl+'/competitors', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -903,7 +903,7 @@ const ProductDetail = () => {
                                   setDeletingCompetitorIds(prev => new Set(prev).add(Number(similar.id)));
                                   try {
                                     await authorizedFetch(
-                                      `https://bardia1234567far.app.n8n.cloud/webhook/competitors?product_id=${selectedProduct.id}&op_product=${similar.id}`,
+                                      `${apiUrl}/competitors?product_id=${selectedProduct.id}&op_product=${similar.id}`,
                                       { method: 'DELETE' }
                                     );
                                     setSearchResults(prevResults =>
