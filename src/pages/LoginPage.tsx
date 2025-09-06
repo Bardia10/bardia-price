@@ -9,6 +9,7 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,7 +17,7 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     setGlobalLoading(true);
     try {
-      const response = await fetch("https://bardia1234567far.app.n8n.cloud/webhook/login", {
+      const response = await fetch(apiUrl+"/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
