@@ -16,6 +16,7 @@ const MyProducts = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [myProducts, setMyProducts] = useState<any[]>([]);
+  const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
   // Map API product shape to internal Product type
   const mapApiProduct = (p: any) => {
@@ -69,7 +70,7 @@ const MyProducts = () => {
         page: page.toString(),
         q: query
       });
-      const url = `https://bardia1234567far.app.n8n.cloud/webhook/my-products?${params}`;
+      const url = `${apiUrl}/my-products?${params}`;
       const res = await authorizedFetch(url);
       let data: any = null;
       try { data = await res.json(); } catch {}
