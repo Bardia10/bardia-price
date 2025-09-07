@@ -25,6 +25,8 @@ import { useSimilars } from "../hooks/useSimilars";
 import { useCompetitors } from "../hooks/useCompetitors"; 
 import { useExpensiveManagement } from "../hooks/useExpensiveManagement"; 
 
+import FloatingProductCard from '../components/ProductDetail/FloatingProductCard';
+
 
 
 
@@ -159,12 +161,6 @@ const ProductDetail = () => {
     }
   }, [selectedProduct, navigate]);
 
-  // Similar products from real API search
-  // const [searchResults, setSearchResults] = useState<any[]>([]);
-  // const [isLoadingSearch, setIsLoadingSearch] = useState(false);
-  // const [isLoadingMoreSimilars, setIsLoadingMoreSimilars] = useState(false);
-  // const [searchError, setSearchError] = useState<string | null>(null);
-  // const [hasFetchedSimilars, setHasFetchedSimilars] = useState(false);
 
   // Map search API response to internal format
   const mapSearchProduct = (p: any) => {
@@ -442,49 +438,17 @@ useExpensiveManagement({
       </button>
 
       {showOriginalProductFloating && (
-        <div
-          className="fixed top-14 left-4 right-4 md:left-8 md:right-8 z-30 bg-white shadow-lg border border-gray-200 p-3 rounded-xl"
-          onClick={() => setIsFloatingExpanded((v) => !v)}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img
-                src={productDetail.photo?.md || productDetail.photo?.original || productDetail.photo?.sm || productDetail.photo?.xs || ''}
-                alt={productDetail.title}
-                className="w-16 h-16 object-cover rounded-md"
-              />
-              <div>
-                <h3 className="font-semibold text-gray-800 text-sm md:text-base line-clamp-1">{productDetail.title}</h3>
-                <p className="text-emerald-600 font-bold text-sm md:text-md">{formatPrice(productDetail.price)}</p>
-              </div>
-            </div>
-            <span className="text-blue-600 text-xs select-none">{isFloatingExpanded ? 'نمایش کمتر' : 'مشاهده کامل'}</span>
+          <div
+            className="fixed top-14 left-4 right-4 md:left-8 md:right-8 z-30 bg-white shadow-lg border border-gray-200 p-3 rounded-xl"
+            onClick={() => setIsFloatingExpanded(v => !v)}
+          >
+            <FloatingProductCard
+              product={productDetail}
+              expanded={isFloatingExpanded}
+              onOpenLightbox={setLightboxSrc}
+            />
           </div>
-          {isFloatingExpanded && (
-            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-              <div className="col-span-2">
-                <p className="text-gray-700">شناسه محصول: {productDetail.id}</p>
-                <p className="text-gray-700">قیمت: {formatPrice(productDetail.price)}</p>
-              </div>
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                {/* Show all photos from productDetail.photos */}
-                {Array.isArray(productDetail.photos) && productDetail.photos.map((p: any, i: number) => (
-                  <img
-                    key={i}
-                    src={p.md || p.original || p.sm || p.xs || ''}
-                    alt={String(i)}
-                    className="w-24 h-20 object-cover rounded-md border cursor-zoom-in"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setLightboxSrc(p.md || p.original || p.sm || p.xs || '');
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+        )}
 
       <div className="p-4 pt-0 md:p-6 pb-24 relative">
         {/* Toast */}
