@@ -143,6 +143,36 @@ const ProductDetail = () => {
     }
   };
 
+  const handleDeleteCompetitorClick = async (competitorId: number) => {
+  if (deletingCompetitorIds.has(competitorId)) return;
+
+  setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
+
+  try {
+    await productService.deleteCompetitor(authorizedFetch, selectedProduct.id, competitorId);
+
+    setSearchResults(prevResults =>
+      prevResults.map((s: any) =>
+        s.id === competitorId ? { ...s, isCompetitor: false } : s
+      )
+    );
+
+    setToast({ message: `رقیب حذف شد`, type: 'success' });
+    setTimeout(() => setToast(null), 2000);
+
+    setRefreshTrigger(v => v + 1);
+  } catch (e: any) {
+    setToast({ message: e?.message || 'خطا در حذف رقیب', type: 'error' });
+    setTimeout(() => setToast(null), 2000);
+  } finally {
+    setDeletingCompetitorIds(prev => {
+      const next = new Set(prev);
+      next.delete(competitorId);
+      return next;
+    });
+  }
+};
+
   useEffect(() => {
     if (!selectedProduct) {
       navigate('my-products');
@@ -455,7 +485,11 @@ useEffect(() => {
     processAddCompetitorQueue();
   };
 
-  // Filter similar products by local search term, keep API order
+ // Normalize competitor IDs
+  const competitorIds = new Set(
+    confirmedCompetitorDetails.map((c: any) => Number(c.id))
+  );
+
   const sortedSimilars = searchResults
     .filter((p: any) => {
       if (!similarSearchTerm.trim()) return true;
@@ -464,8 +498,14 @@ useEffect(() => {
         p.title?.toLowerCase().includes(term) ||
         p.description?.toLowerCase().includes(term)
       );
-    });
+    })
+    .map((p: any) => ({
+      ...p,
+      isCompetitor: competitorIds.has(Number(p.id)),
+    }));
 
+
+      
   // Press-and-hold to open lightbox
   const startHoldToZoom = (src: string, stopProp?: (e: any) => void) => (e: any) => {
     if (stopProp) stopProp(e);
@@ -855,33 +895,9 @@ useEffect(() => {
                                 className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center hover:bg-red-600"
                                 title="حذف از رقبا"
                                 disabled={isDeleting}
-                                onClick={async (e) => {
+                                onClick={(e) => {
                                   e.stopPropagation();
-                                  if (isDeleting) return;
-                                  setDeletingCompetitorIds(prev => new Set(prev).add(Number(similar.id)));
-                                  try {
-                                    await authorizedFetch(
-                                      `${apiUrl}/competitors?product_id=${selectedProduct.id}&op_product=${similar.id}`,
-                                      { method: 'DELETE' }
-                                    );
-                                    setSearchResults(prevResults =>
-                                      prevResults.map((s: any) =>
-                                        s.id === similar.id ? { ...s, isCompetitor: false } : s
-                                      )
-                                    );
-                                    setToast({ message: `رقیب "${similar.title}" حذف شد`, type: 'success' });
-                                    setTimeout(() => setToast(null), 2000);
-                                    setRefreshTrigger((v) => v + 1);
-                                  } catch (e) {
-                                    setToast({ message: 'خطا در حذف رقیب', type: 'error' });
-                                    setTimeout(() => setToast(null), 2000);
-                                  } finally {
-                                    setDeletingCompetitorIds(prev => {
-                                      const next = new Set(prev);
-                                      next.delete(Number(similar.id));
-                                      return next;
-                                    });
-                                  }
+                                  handleDeleteCompetitorClick(Number(similar.id));
                                 }}
                               >
                                 <X size={14} />
