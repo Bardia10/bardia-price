@@ -20,6 +20,7 @@ import { Search, ChevronLeft, Package, Sparkles, AlertCircle, Eye, EyeOff, Setti
 import * as productService from "../services/productService";
 import { ApiError } from "../services/apiError";
 
+import { useProductDetail } from "../hooks/useProductDetail"; // 👈 add this at the top
 
 
 
@@ -47,39 +48,17 @@ const ProductDetail = () => {
     }
   }, [lastNavigation]);
 
-  // --- New: Product details state ---
-  const [productDetail, setProductDetail] = useState<any>(null);
-  const [isLoadingProductDetail, setIsLoadingProductDetail] = useState(false);
-  const [productDetailError, setProductDetailError] = useState<string | null>(null);
 
-  // Fetch product details from API
-  useEffect(() => {
-    if (!selectedProduct?.id || !basalamToken) {
-      setProductDetail(null);
-      return;
-    }
-    let cancelled = false;
-    const run = async () => {
-      setIsLoadingProductDetail(true);
-      setProductDetailError(null);
-      try {
-        const data = await productService.fetchProductDetail(authorizedFetch, selectedProduct.id);
-        if (!cancelled) setProductDetail(data);
-      } catch (err: any) {
-        if (err instanceof ApiError && err.status === 401) {
-          setBasalamToken('');
-          navigate('login');
-          if (!cancelled) setProductDetailError('باید دوباره لاگین کنید');
-        } else {
-          if (!cancelled) setProductDetailError(err?.message || 'خطای نامشخص');
-        }
-      } finally {
-        if (!cancelled) setIsLoadingProductDetail(false);
-      }
-    };
-    run();
-    return () => { cancelled = true; };
-  }, [selectedProduct?.id, basalamToken, authorizedFetch, refreshKey]);
+  // inside ProductDetail component:
+  const { productDetail, isLoadingProductDetail, productDetailError } = useProductDetail(
+    selectedProduct,
+    basalamToken,
+    authorizedFetch,
+    setBasalamToken,
+    navigate,
+    refreshKey
+  );
+
 
 
   // --- Existing states ---
