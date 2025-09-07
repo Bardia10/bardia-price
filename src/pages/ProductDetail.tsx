@@ -23,6 +23,7 @@ import { ApiError } from "../services/apiError";
 import { useProductDetail } from "../hooks/useProductDetail"; 
 import { useSimilars } from "../hooks/useSimilars"; 
 import { useCompetitors } from "../hooks/useCompetitors"; 
+import { useExpensiveManagement } from "../hooks/useExpensiveManagement"; 
 
 
 
@@ -225,38 +226,16 @@ const {
 
 
    // Auto-manage product in expensives based on price comparison with competitors
-useEffect(() => {
-      if (!selectedProduct?.id || !productDetail?.price || confirmedCompetitorDetails.length === 0 || !basalamToken) {
-        return;
-      }
+useExpensiveManagement({
+  selectedProduct,
+  productDetail,
+  confirmedCompetitorDetails,
+  authorizedFetch,
+  basalamToken,
+  setBasalamToken,
+  navigate
+});
 
-      const priced = confirmedCompetitorDetails.filter(c => typeof c.price === "number" && c.price > 0);
-      if (priced.length === 0) return;
-
-      const lowest = priced.reduce((min, c) => (c.price < min.price ? c : min), priced[0]);
-
-      const run = async () => {
-        try {
-          if (productDetail.price < lowest.price) {
-            await productService.manageExpensive(authorizedFetch, selectedProduct.id, "DELETE");
-            console.log(`Product ${selectedProduct.id} deleted from expensives - price lower than competitors`);
-          } else {
-            await productService.manageExpensive(authorizedFetch, selectedProduct.id, "PUT");
-            console.log(`Product ${selectedProduct.id} added to expensives - price not lower than competitors`);
-          }
-        } catch (err: any) {
-          if (err instanceof ApiError && err.status === 401) {
-            setBasalamToken("");
-            navigate("login");
-            console.error("باید دوباره لاگین کنید");
-          } else {
-            console.error(err?.message || "خطا در مدیریت expensives");
-          }
-        }
-      };
-
-      run();
-    }, [confirmedCompetitorDetails, productDetail, selectedProduct, authorizedFetch, basalamToken]);
 
   const handleScroll = useCallback(() => {
     const scrollPosition = window.scrollY;
