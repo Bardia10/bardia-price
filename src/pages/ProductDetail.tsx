@@ -19,7 +19,6 @@ import { Search, ChevronLeft, Package, Sparkles, AlertCircle, Eye, EyeOff, Setti
 
 import * as productService from "../services/productService";
 import { ApiError } from "../services/apiError";
-import { apiUrl } from "../lib/api"; // optional: only if you need
 
 
 
@@ -28,7 +27,6 @@ import { apiUrl } from "../lib/api"; // optional: only if you need
 
 
 const ProductDetail = () => {
-  // const apiUrl = import.meta.env.VITE_BACKEND_URL;
   // Local search for similar products
   const [similarSearchTerm, setSimilarSearchTerm] = useState('');
   // Refresh key to trigger re-fetch
