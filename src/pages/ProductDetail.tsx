@@ -21,6 +21,7 @@ import * as productService from "../services/productService";
 import { ApiError } from "../services/apiError";
 
 import { useProductDetail } from "../hooks/useProductDetail"; // 👈 add this at the top
+import { useSimilars } from "../hooks/useSimilars"; // 👈 add this at the top
 
 
 
@@ -76,8 +77,8 @@ const ProductDetail = () => {
   const [isToolsOpen, setIsToolsOpen] = useState(false);
 
   // Pagination for similar products
-  const [similarPage, setSimilarPage] = useState(1);
-  const [hasMoreSimilarPages, setHasMoreSimilarPages] = useState(true);
+  // const [similarPage, setSimilarPage] = useState(1);
+  // const [hasMoreSimilarPages, setHasMoreSimilarPages] = useState(true);
   const holdTimerRef = useRef<number | null>(null);
   const similarsContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -157,11 +158,11 @@ const ProductDetail = () => {
   }, [selectedProduct, navigate]);
 
   // Similar products from real API search
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isLoadingSearch, setIsLoadingSearch] = useState(false);
-  const [isLoadingMoreSimilars, setIsLoadingMoreSimilars] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
-  const [hasFetchedSimilars, setHasFetchedSimilars] = useState(false);
+  // const [searchResults, setSearchResults] = useState<any[]>([]);
+  // const [isLoadingSearch, setIsLoadingSearch] = useState(false);
+  // const [isLoadingMoreSimilars, setIsLoadingMoreSimilars] = useState(false);
+  // const [searchError, setSearchError] = useState<string | null>(null);
+  // const [hasFetchedSimilars, setHasFetchedSimilars] = useState(false);
 
   // Map search API response to internal format
   const mapSearchProduct = (p: any) => {
@@ -193,76 +194,29 @@ const ProductDetail = () => {
   };
 
   // Fetch similar products from search API (with pagination)
+  const {
+  searchResults,
+  isLoadingSearch,
+  isLoadingMoreSimilars,
+  hasMoreSimilarPages,
+  hasFetchedSimilars,
+  searchError,
+  fetchSimilarProducts,
+  loadMoreSimilars,
+  setSearchResults
+} = useSimilars(
+  selectedProduct,
+  basalamToken,
+  authorizedFetch,
+  mapSearchProduct,
+  setGlobalLoading,
+  setBasalamToken,
+  navigate
+);
 
-  const fetchSimilarProducts = useCallback(async () => {
-    if (!selectedProduct || !basalamToken || !selectedProduct.title || !selectedProduct.id) {
-      setSearchResults([]);
-      setSimilarPage(1);
-      setHasMoreSimilarPages(true);
-      return;
-    }
 
-    setIsLoadingSearch(true);
-    setGlobalLoading(true);
-    setSearchError(null);
 
-    try {
-      const { products, page } = await productService.searchSimilarProducts(
-        authorizedFetch,
-        selectedProduct.title,
-        selectedProduct.id,
-        1
-      );
 
-      const mapped = products.map(mapSearchProduct).filter((p: any) => p.id && p.title);
-      setSearchResults(mapped);
-      setSimilarPage(page + 1);
-      setHasMoreSimilarPages(mapped.length > 0);
-      setHasFetchedSimilars(true);
-    } catch (err: any) {
-      if (err instanceof ApiError && err.status === 401) {
-        setBasalamToken("");
-        navigate("login");
-        setSearchError("باید دوباره لاگین کنید");
-      } else {
-        setSearchError(err?.message || "خطای نامشخص در جستجو");
-      }
-    } finally {
-      setIsLoadingSearch(false);
-      setGlobalLoading(false);
-    }
-  }, [selectedProduct, basalamToken, authorizedFetch, setGlobalLoading, mapSearchProduct]);
-
-  const loadMoreSimilars = useCallback(async () => {
-    if (!selectedProduct || !basalamToken || !selectedProduct.title || !selectedProduct.id || isLoadingMoreSimilars || !hasMoreSimilarPages) return;
-
-    setIsLoadingMoreSimilars(true);
-    setSearchError(null);
-
-    try {
-      const { products, page } = await productService.searchSimilarProducts(
-        authorizedFetch,
-        selectedProduct.title,
-        selectedProduct.id,
-        similarPage
-      );
-
-      const mapped = products.map(mapSearchProduct).filter((p: any) => p.id && p.title);
-      setSearchResults(prev => [...prev, ...mapped]);
-      setSimilarPage(page + 1);
-      setHasMoreSimilarPages(mapped.length > 0);
-    } catch (err: any) {
-      if (err instanceof ApiError && err.status === 401) {
-        setBasalamToken("");
-        navigate("login");
-        setSearchError("باید دوباره لاگین کنید");
-      } else {
-        setSearchError(err?.message || "خطای نامشخص در جستجو");
-      }
-    } finally {
-      setIsLoadingMoreSimilars(false);
-    }
-  }, [selectedProduct, basalamToken, authorizedFetch, similarPage, isLoadingMoreSimilars, hasMoreSimilarPages, mapSearchProduct]);
 
   // Fresh, simplified competitor fetch: rely solely on webhook + Basalam core; ignore dummy data
   useEffect(() => {
