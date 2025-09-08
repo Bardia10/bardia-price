@@ -29,6 +29,7 @@ import FloatingProductCard from '../components/ProductDetail/FloatingProductCard
 import CompetitorOverview from '../components/ProductDetail/CompetitorOverview';
 import ProductImageGallery from "../components/ProductDetail/ProductImageGallery";
 import SimilarProducts from "../components/ProductDetail/SimilarProducts";
+import CompetitorsModal from "../components/ProductDetail/CompetitorsModal";
 
 
 
@@ -629,82 +630,15 @@ useExpensiveManagement({
         )}
 
         {/* Competitors Modal */}
-        {isCompetitorsModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4" onClick={() => setIsCompetitorsModalOpen(false)}>
-            <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-4xl max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-              <div className="p-4 border-b bg-orange-500 text-white flex items-center justify-between">
-                <h3 className="font-bold text-lg">رقبای فعلی شما</h3>
-                <button onClick={() => setIsCompetitorsModalOpen(false)} className="text-white hover:text-gray-200">
-                  <X size={24} />
-                </button>
-              </div>
-              <div className="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
-                {isLoadingConfirmedCompetitors ? (
-                  <LoadingSpinner />
-                ) : confirmedCompetitorsError ? (
-                  <p className="text-red-600 text-sm text-center py-4">{confirmedCompetitorsError}</p>
-                ) : confirmedCompetitorDetails.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      
-                        {[...confirmedCompetitorDetails]
-                          .sort((a, b) => {
-                            // Sort by price ascending, fallback to id if price is missing
-                            if (typeof a.price === 'number' && typeof b.price === 'number') {
-                              return a.price - b.price;
-                            }
-                            if (typeof a.price === 'number') return -1;
-                            if (typeof b.price === 'number') return 1;
-                            return a.id - b.id;
-                          })
-                          .map((comp) => {
-                            const cheaper = typeof comp.price === 'number' && comp.price > 0 && comp.price < selectedProduct.price;
-                            const equal = comp.price === selectedProduct.price;
-                            const isDeleting = deletingCompetitorIds.has(comp.id);
-                            return (
-                              <div key={comp.id} className={`relative bg-gray-50 rounded-lg border p-3 flex flex-col items-center text-center ${cheaper ? 'border-green-300' : !equal && comp.price ? 'border-red-200' : ''}`}>
-                                {/* Delete button */}
-                                <button
-                                  className="absolute top-2 left-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition text-xs z-10"
-                                  title="حذف رقیب"
-                                  onClick={() => handleDeleteCompetitor(comp.id)}
-                                  disabled={isDeleting}
-                                  style={{ opacity: isDeleting ? 0.5 : 1 }}
-                                >
-                                  <X size={14} />
-                                </button>
-                                <img
-                                  src={comp.photo || 'https://placehold.co/120x120/cccccc/333333?text=Comp'}
-                                  alt={comp.title}
-                                  className="w-24 h-24 object-cover rounded-md border mb-2"
-                                  onError={(e: any) => {
-                                    e.target.onerror = null;
-                                    e.target.src = 'https://placehold.co/120x120/cccccc/333333?text=Comp';
-                                  }}
-                                />
-                                <p className="text-sm font-semibold text-gray-800 line-clamp-2 mb-2">{comp.title || `محصول ${comp.id}`}</p>
-                                {comp.price ? (
-                                  <p className={`font-bold mb-2 ${cheaper ? 'text-green-600' : equal ? 'text-blue-600' : 'text-red-600'}`}>{formatPrice(comp.price)}</p>
-                                ) : null}
-                                <button
-                                  className="w-full py-2 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200"
-                                  onClick={() => window.open(comp.productUrl || `https://basalam.com/product/${comp.id}`, '_blank')}
-                                >
-                                  مشاهده در باسلام
-                                </button>
-                              </div>
-                            );
-                          })}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">هنوز رقیبی اضافه نشده است.</p>
-                    <p className="text-sm text-gray-400">برای افزودن رقیب، از بخش "جست و جوی هوشمند" استفاده کنید.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        <CompetitorsModal
+          isOpen={isCompetitorsModalOpen}
+          onClose={() => setIsCompetitorsModalOpen(false)}
+          confirmedCompetitorDetails={confirmedCompetitorDetails}
+          selectedProductPrice={selectedProduct.price}
+          deletingCompetitorIds={deletingCompetitorIds}
+          handleDeleteCompetitor={handleDeleteCompetitor}
+        />
+
       </div>
     </div>
   );
