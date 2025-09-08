@@ -481,6 +481,16 @@ useExpensiveManagement({
           cancelHoldToZoom={cancelHoldToZoom}
         />
 
+        <div className="bg-white p-4 rounded-xl shadow-md mb-4 flex flex-col items-center">
+          <h2 className="text-xl font-bold text-gray-800 mb-2">
+            {productDetail.title}
+          </h2>
+          <p className="text-emerald-600 text-2xl font-bold mb-3">
+            {formatPrice(productDetail.price)}
+          </p>
+        </div>
+
+
 
         <CompetitorOverview
           isLoadingConfirmedCompetitors={isLoadingConfirmedCompetitors}
