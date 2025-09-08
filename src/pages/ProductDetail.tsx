@@ -27,6 +27,8 @@ import { useExpensiveManagement } from "../hooks/useExpensiveManagement";
 
 import FloatingProductCard from '../components/ProductDetail/FloatingProductCard';
 import CompetitorOverview from '../components/ProductDetail/CompetitorOverview';
+import ProductImageGallery from "../components/ProductDetail/ProductImageGallery";
+import SimilarProducts from "../components/ProductDetail/SimilarProducts";
 
 
 
@@ -94,7 +96,7 @@ const ProductDetail = () => {
   // const [confirmedCompetitorsError, setConfirmedCompetitorsError] = useState<string | null>(null);
   const competitorDetailCacheRef = useRef<Map<number, ConfirmedCompetitorDetail>>(new Map());
   // Track loading state for adding competitors
-  const [addingCompetitorIds, setAddingCompetitorIds] = useState<Set<string>>(new Set());
+  const [addingCompetitorIds, setAddingCompetitorIds] = useState<Set<number>>(new Set());
   // Refresh trigger for confirmed competitors
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   // Modal state for competitors
@@ -261,29 +263,34 @@ useExpensiveManagement({
     isProcessingQueueRef.current = false;
   };
 
-  // Temporary placeholder type
   type SearchProduct = any;
+
   const addAsCompetitor = (similarProduct: SearchProduct) => {
-    
     if (!selectedProduct?.id || !similarProduct?.id || !similarProduct?.vendorIdentifier) {
       setToast({ message: 'اطلاعات محصول ناقص است', type: 'error' });
       setTimeout(() => setToast(null), 2000);
       return;
     }
 
-    const productId = similarProduct.id;
+    const productId = Number(similarProduct.id); // ✅ ensure number type
 
     if (addingCompetitorIds.has(productId)) return;
 
-    setAddingCompetitorIds(prev => new Set([...prev, productId]));
+    // immediately mark as loading
+    setAddingCompetitorIds(prev => new Set(prev).add(productId));
 
     addCompetitorQueueRef.current.push(async () => {
       try {
-        await productService.addCompetitor(authorizedFetch, selectedProduct.id, similarProduct.id, similarProduct.vendorIdentifier);
+        await productService.addCompetitor(
+          authorizedFetch,
+          selectedProduct.id,
+          productId,
+          similarProduct.vendorIdentifier
+        );
 
         setSearchResults(prevResults =>
           prevResults.map((s: SearchProduct) =>
-            s.id === similarProduct.id ? { ...s, isCompetitor: true } : s
+            Number(s.id) === productId ? { ...s, isCompetitor: true } : s
           )
         );
 
@@ -295,6 +302,7 @@ useExpensiveManagement({
         setToast({ message: error?.message || 'خطا در افزودن رقیب', type: 'error' });
         setTimeout(() => setToast(null), 3000);
       } finally {
+        // remove loading state
         setAddingCompetitorIds(prev => {
           const newSet = new Set(prev);
           newSet.delete(productId);
@@ -305,6 +313,7 @@ useExpensiveManagement({
 
     processAddCompetitorQueue();
   };
+
 
  // Normalize competitor IDs
   const competitorIds = new Set(
@@ -460,46 +469,17 @@ useExpensiveManagement({
             {toast.message}
           </div>
         )}
-        <div className="flex flex-nowrap overflow-x-auto gap-2 p-2 bg-white rounded-xl shadow-md mb-4 scrollbar-hide">
-          {/* Show main photo first, then all secondary photos */}
-          {productDetail.photo && (
-            <img
-              key="main"
-              src={productDetail.photo.md || productDetail.photo.original || productDetail.photo.sm || productDetail.photo.xs || ''}
-              alt={`${productDetail.title} main`}
-              className="flex-shrink-0 w-40 h-32 object-cover rounded-lg shadow-sm border border-gray-100 cursor-zoom-in select-none"
-              onPointerDown={startHoldToZoom(productDetail.photo.md || productDetail.photo.original || productDetail.photo.sm || productDetail.photo.xs || '')}
-              onPointerUp={cancelHoldToZoom}
-              onPointerLeave={cancelHoldToZoom}
-              onError={(e: any) => {
-                e.target.onerror = null;
-                e.target.src = 'https://placehold.co/150x100/cccccc/333333?text=No+Image';
-              }}
-            />
-          )}
-          {Array.isArray(productDetail.photos) && productDetail.photos.map((photo: any, index: number) => (
-            <img
-              key={index}
-              src={photo.md || photo.original || photo.sm || photo.xs || ''}
-              alt={`${productDetail.title} image ${index + 1}`}
-              className="flex-shrink-0 w-40 h-32 object-cover rounded-lg shadow-sm border border-gray-100 cursor-zoom-in select-none"
-              onPointerDown={startHoldToZoom(photo.md || photo.original || photo.sm || photo.xs || '')}
-              onPointerUp={cancelHoldToZoom}
-              onPointerLeave={cancelHoldToZoom}
-              onError={(e: any) => {
-                e.target.onerror = null;
-                e.target.src = 'https://placehold.co/150x100/cccccc/333333?text=No+Image';
-              }}
-            />
-          ))}
-        </div>
+        
+        <ProductImageGallery
+          productTitle={productDetail.title}
+          mainPhoto={productDetail.photo}
+          photos={productDetail.photos}
+          lightboxSrc={lightboxSrc}
+          setLightboxSrc={setLightboxSrc}
+          startHoldToZoom={startHoldToZoom}
+          cancelHoldToZoom={cancelHoldToZoom}
+        />
 
-        {/* Lightbox for images */}
-        {lightboxSrc && (
-          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center" onClick={() => setLightboxSrc(null)}>
-            <img src={lightboxSrc} alt="full" className="max-w-[95vw] max-h-[95vh] object-contain" />
-          </div>
-        )}
 
         <CompetitorOverview
           isLoadingConfirmedCompetitors={isLoadingConfirmedCompetitors}
@@ -532,153 +512,27 @@ useExpensiveManagement({
                 </div>
 
         {/* Similar products can be toggled; competitors modal is independent */}
-        {showSimilars && (
-          <div ref={similarsContainerRef} className="bg-white p-4 rounded-xl shadow-md mb-4 flex flex-col items-center">
-            <h3 className="text-xl font-bold text-gray-800 mb-3">اضافه کردن رقیب های جدید:</h3>
-            {/* Local search box for similar products */}
-            {hasFetchedSimilars ? (
-              <>
-                <div className="flex justify-center mb-4 mt-4">
-                  <p className="text-lg text-emerald-700 leading-relaxed">
-                    روی محصول مورد نظر کلیک کنین تا به رقیب ها اضافه بشه
-                  </p>
-                </div>
-                <div className="mb-4 flex items-center gap-2">
-                  <input
-                    type="text"
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
-                    placeholder="جستجو در نتایج..."
-                    value={similarSearchTerm}
-                    onChange={e => setSimilarSearchTerm(e.target.value)}
-                  />
-                  {similarSearchTerm && (
-                    <button
-                      className="px-3 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 whitespace-nowrap"
-                      onClick={() => setSimilarSearchTerm('')}
-                    >
-                      پاک کردن
-                    </button>
+        <SimilarProducts
+          showSimilars={showSimilars}
+          similarsContainerRef={similarsContainerRef}
+          hasFetchedSimilars={hasFetchedSimilars}
+          similarSearchTerm={similarSearchTerm}
+          setSimilarSearchTerm={setSimilarSearchTerm}
+          isLoadingSearch={isLoadingSearch}
+          searchError={searchError}
+          sortedSimilars={sortedSimilars}
+          addingCompetitorIds={addingCompetitorIds}
+          deletingCompetitorIds={deletingCompetitorIds}
+          addAsCompetitor={addAsCompetitor}
+          handleDeleteCompetitorClick={handleDeleteCompetitorClick}
+          startHoldToZoom={startHoldToZoom}
+          cancelHoldToZoom={cancelHoldToZoom}
+          hasMoreSimilarPages={hasMoreSimilarPages}
+          loadMoreSimilars={loadMoreSimilars}
+          isLoadingMoreSimilars={isLoadingMoreSimilars}
+          fetchSimilarProducts={fetchSimilarProducts}
+        />
 
-                  )}
-                </div>
-                {isLoadingSearch ? (
-                  <LoadingSpinner />
-                ) : searchError ? (
-                  <p className="text-red-600 text-sm text-center py-4">{searchError}</p>
-                ) : sortedSimilars.length > 0 ? (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      {sortedSimilars.map((similar: any, idx: number) => {
-                        const isLoading = addingCompetitorIds.has(similar.id);
-                        const isAdded = similar.isCompetitor;
-                        const isDeleting = deletingCompetitorIds.has(Number(similar.id));
-                        return (
-                          <div
-                            key={similar.id}
-                            className={`relative bg-gray-100 rounded-xl overflow-hidden flex flex-col items-center justify-between p-3 transition-all duration-300 ease-in-out ${
-                              isLoading ? 'cursor-wait opacity-70' : isAdded ? 'cursor-default' : 'cursor-pointer'
-                            } border ${
-                              isAdded ? 'border-2 border-green-500 shadow-[0_0_0_2px_rgba(34,197,94,0.2),0_10px_25px_-5px_rgba(34,197,94,0.5)]' : 
-                                isLoading ? 'border-2 border-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.2),0_10px_25px_-5px_rgba(59,130,246,0.5)]' :
-                                'border-gray-200 hover:shadow-md hover:scale-[1.02]'
-                            }`}
-                            onClick={() => !isLoading && !isAdded && addAsCompetitor(similar)}
-                          >
-                            <img
-                              src={similar.photo_id}
-                              alt={similar.title}
-                              className="w-28 h-28 object-cover rounded-lg mb-2 border border-gray-200 cursor-zoom-in select-none"
-                              onPointerDown={startHoldToZoom(similar.photo_id, (e) => e.stopPropagation())}
-                              onPointerUp={cancelHoldToZoom}
-                              onPointerLeave={cancelHoldToZoom}
-                              onError={(e: any) => {
-                                e.target.onerror = null;
-                                e.target.src = 'https://placehold.co/120x120/cccccc/333333?text=Sim+Image';
-                              }}
-                            />
-                            <button
-                              className="absolute top-2 left-2 p-1 rounded-full bg-white/90 border hover:bg-white"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(similar.basalamUrl, '_blank');
-                              }}
-                              title="مشاهده در باسلام"
-                            >
-                              <ExternalLink size={14} />
-                            </button>
-                            <h4 className="text-center text-sm font-semibold text-gray-800 mb-1 line-clamp-2">{similar.title}</h4>
-                            {/* Vendor name below title, lighter color, smaller/thinner font */}
-                            {similar.vendor && similar.vendor.name && (
-                              <div className="text-center text-xs font-normal text-gray-400 mb-1">
-                                {similar.vendor.name}
-                              </div>
-                            )}
-                            <p className="text-emerald-600 font-bold text-base">{formatPrice(similar.price)}</p>
-                            {/* Loading or status overlay */}
-                            {isLoading && (
-                              <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                                <div className="flex flex-col items-center gap-2">
-                                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                                  <span className="text-xs text-blue-600 font-medium">در حال افزودن...</span>
-                                </div>
-                              </div>
-                            )}
-                            {isAdded && !isDeleting && (
-                              <button
-                                className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center hover:bg-red-600"
-                                title="حذف از رقبا"
-                                disabled={isDeleting}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteCompetitorClick(Number(similar.id));
-                                }}
-                              >
-                                <X size={14} />
-                              </button>
-                            )}
-                            {isAdded && isDeleting && (
-                              <div className="absolute top-2 right-2 bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-medium flex items-center">
-                                <span>در حال حذف...</span>
-                              </div>
-                            )}
-                            {isAdded && !isDeleting && (
-                              <div className="absolute top-8 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                                ✓ اضافه شد
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {hasMoreSimilarPages && (
-                      <div className="flex justify-center py-4">
-                        <button
-                          onClick={loadMoreSimilars}
-                          disabled={isLoadingMoreSimilars}
-                          className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                          {isLoadingMoreSimilars ? 'در حال بارگذاری...' : 'نمایش نتایج بیشتر'}
-                        </button>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-gray-500 text-center py-4">هیچ محصول مشابهی یافت نشد.</p>
-                )}
-              </>
-            ) : (
-              <div className="flex justify-center py-4">
-                <button
-                  onClick={fetchSimilarProducts}
-                  disabled={isLoadingSearch}
-                  className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {isLoadingSearch ? 'در حال بارگذاری...' : 'جست و جوی هوشمند'}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
   {/* Removed advanced visibility tools and eye modal */}
 
