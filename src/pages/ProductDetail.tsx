@@ -26,6 +26,7 @@ import { useCompetitors } from "../hooks/useCompetitors";
 import { useExpensiveManagement } from "../hooks/useExpensiveManagement"; 
 
 import FloatingProductCard from '../components/ProductDetail/FloatingProductCard';
+import CompetitorOverview from '../components/ProductDetail/CompetitorOverview';
 
 
 
@@ -500,75 +501,19 @@ useExpensiveManagement({
           </div>
         )}
 
-        <div className="bg-white p-4 rounded-xl shadow-md mb-4 flex flex-col items-center">
-          <h2 className="text-xl font-bold text-gray-800 mb-2">{productDetail.title}</h2>
-          <p className="text-emerald-600 text-2xl font-bold mb-3">{formatPrice(productDetail.price)}</p>
+        <CompetitorOverview
+          isLoadingConfirmedCompetitors={isLoadingConfirmedCompetitors}
+          confirmedCompetitorsError={confirmedCompetitorsError}
+          confirmedCompetitorDetails={confirmedCompetitorDetails}
+          lowestCompetitor={lowestCompetitor}
+          averageCompetitorPrice={averageCompetitorPrice}
+          lowestBadgeText={lowestBadgeText}
+          lowestBadgeClass={lowestBadgeClass}
+          avgBadgeText={avgBadgeText}
+          avgBadgeClass={avgBadgeClass}
+          onOpenModal={() => setIsCompetitorsModalOpen(true)}
+        />
 
-          {/* Fresh competitors section - from live APIs only */}
-          <div className="border-t border-gray-200 pt-3 mt-12">
-           <div className="flex flex-col items-center mb-3">
-              <h4 className="font-bold text-gray-800 text-2xl mb-6">بررسی رقیب ها</h4>
-              <span className="text-lg text-gray-500">
-                {isLoadingConfirmedCompetitors
-                  ? 'در حال بارگذاری...'
-                  : `${confirmedCompetitorDetails.length} رقیب`}
-              </span>
-            </div>
-
-            
-            {isLoadingConfirmedCompetitors ? (
-              <LoadingSpinner />
-            ) : confirmedCompetitorsError ? (
-              <p className="text-red-600 text-sm">{confirmedCompetitorsError}</p>
-            ) : confirmedCompetitorDetails.length > 0 ? (
-              <>
-                <div className="mb-3 space-y-1">
-                  {lowestCompetitor && (
-                    <div className="flex flex-wrap items-center gap-2 text-lg">
-                      <span className="text-lg font-semibold text-gray-800">کمترین قیمت رقیب:</span>
-                      <span className="text-lg ml-1">{formatPrice(lowestCompetitor.price)}</span>
-                      <span className={`px-2 py-0.5 rounded text-md border ${lowestBadgeClass}`}>
-                        {lowestBadgeText}
-                      </span>
-                      {/* <a
-                        href={lowestCompetitor.productUrl || `https://basalam.com/product/${lowestCompetitor.id}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-600 hover:underline font-semibold"
-                      >
-                        مشاهده رقیب در باسلام
-                      </a> */}
-                    </div>
-                  )}
-                  {averageCompetitorPrice > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 text-lg mt-1">
-                      <span className="font-semibold">میانگین قیمت رقبا:</span> {formatPrice(averageCompetitorPrice)}
-                      <span className={`px-2 py-0.5 rounded text-md border ${avgBadgeClass}`}>
-                        {avgBadgeText}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                
-
-                <div className="flex items-center justify-center mb-3">
-                  <button
-                    onClick={() => setIsCompetitorsModalOpen(true)}
-                    className="py-2 px-4 bg-orange-500 text-white text-lg font-medium rounded-lg hover:bg-orange-600 transition duration-200 ease-in-out shadow-sm flex items-center gap-2"
-                  >
-                    <Eye size={16} />
-                    مشاهده همه رقیب های انتخاب شده
-                  </button>
-                </div>
-                
-
-              </>
-            ) : (
-              <p className="text-gray-500 text-sm">هنوز رقیبی اضافه نشده است.</p>
-            )}
-          </div>
-        </div>
 
         {/* Edit Now Button */}
                 <div className="flex flex-col items-center m-12">
