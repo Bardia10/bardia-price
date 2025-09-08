@@ -540,7 +540,7 @@ useExpensiveManagement({
         {/* Old competitors modal removed in favor of the live section above */}
 
         {/* Filter Modal */}
-        {isFilterModalOpen && (
+        {/* {isFilterModalOpen && (
           <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4" onClick={() => setIsFilterModalOpen(false)}>
             <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
               <div className="p-4 border-b">
@@ -587,10 +587,10 @@ useExpensiveManagement({
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
 
-        {/* Change Price Modal */}
+        {/* Change Price Modal
         {isChangePriceOpen && (
           <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4" onClick={() => setIsChangePriceOpen(false)}>
             <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
@@ -627,7 +627,7 @@ useExpensiveManagement({
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Competitors Modal */}
         <CompetitorsModal
