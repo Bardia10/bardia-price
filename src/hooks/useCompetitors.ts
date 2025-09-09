@@ -8,7 +8,7 @@ export type ConfirmedCompetitorDetail = {
   price: number;
   photo: string;
   vendorIdentifier: string;
-  vendorTitle: string; // ✅ new field
+  vendorTitle: string;
   productUrl: string;
 };
 
@@ -54,7 +54,6 @@ export function useCompetitors(
           ? photoObj
           : photoObj?.md || photoObj?.original || photoObj?.sm || photoObj?.xs || "";
 
-      // ✅ Try to grab vendor.title
       const vendorTitle =
         data?.vendor?.title ??
         data?.product?.vendor?.title ??
@@ -96,7 +95,13 @@ export function useCompetitors(
 
         // 2) bulk fetch details for competitor ids (via service)
         const bulkData = await productService.fetchBulkProducts(authorizedFetch, competitorIds);
-        const products = Array.isArray(bulkData?.data) ? bulkData.data : [];
+        let products = Array.isArray(bulkData?.data) ? bulkData.data : [];
+
+        // ✅ Filter only products with status === 2976 (string or number)
+        products = products.filter((prod: any) => {
+          const status = prod?.status.value ?? prod?.product?.status.value;
+          return String(status) === "2976";
+        });
 
         const details: ConfirmedCompetitorDetail[] = products.map((prod: any) => {
           const vendorIdentifier = items.find(i => i.op_product === prod.id)?.op_vendor || "";
