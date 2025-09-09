@@ -74,27 +74,15 @@ const ProductDetail = () => {
   const [showOriginalProductFloating, setShowOriginalProductFloating] = useState(false);
   const [isFloatingExpanded, setIsFloatingExpanded] = useState(false);
   const [showSimilars, setShowSimilars] = useState(true)
-  const [filterOnlyCheaper, setFilterOnlyCheaper] = useState(false);
-  const [percentOverAllowance, setPercentOverAllowance] = useState(0); // 0..50
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
-  const [isChangePriceOpen, setIsChangePriceOpen] = useState(false);
-  const [priceInput, setPriceInput] = useState<string>('');
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [tempPercent, setTempPercent] = useState<number>(percentOverAllowance);
-  const [isToolsOpen, setIsToolsOpen] = useState(false);
 
   // Pagination for similar products
-  // const [similarPage, setSimilarPage] = useState(1);
-  // const [hasMoreSimilarPages, setHasMoreSimilarPages] = useState(true);
   const holdTimerRef = useRef<number | null>(null);
   const similarsContainerRef = useRef<HTMLDivElement | null>(null);
 
   // New confirmed competitors (fetched from webhook + Basalam core details)
   type ConfirmedCompetitorDetail = { id: number; title: string; price: number; photo: string; vendorIdentifier: string; productUrl: string };
-  // const [confirmedCompetitorDetails, setConfirmedCompetitorDetails] = useState<ConfirmedCompetitorDetail[]>([]);
-  // const [isLoadingConfirmedCompetitors, setIsLoadingConfirmedCompetitors] = useState(false);
-  // const [confirmedCompetitorsError, setConfirmedCompetitorsError] = useState<string | null>(null);
   const competitorDetailCacheRef = useRef<Map<number, ConfirmedCompetitorDetail>>(new Map());
   // Track loading state for adding competitors
   const [addingCompetitorIds, setAddingCompetitorIds] = useState<Set<number>>(new Set());
@@ -490,8 +478,6 @@ useExpensiveManagement({
           </p>
         </div>
 
-
-
         <CompetitorOverview
           isLoadingConfirmedCompetitors={isLoadingConfirmedCompetitors}
           confirmedCompetitorsError={confirmedCompetitorsError}
@@ -544,101 +530,6 @@ useExpensiveManagement({
           fetchSimilarProducts={fetchSimilarProducts}
         />
 
-
-  {/* Removed advanced visibility tools and eye modal */}
-
-        {/* Old competitors modal removed in favor of the live section above */}
-
-        {/* Filter Modal */}
-        {/* {isFilterModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4" onClick={() => setIsFilterModalOpen(false)}>
-            <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-              <div className="p-4 border-b">
-                <h3 className="font-bold text-gray-800">فیلتر قیمت</h3>
-              </div>
-              <div className="p-4 space-y-3">
-                <p className="text-sm text-gray-600">حداکثر درصد بالاتر از قیمت شما که نمایش داده شود:</p>
-                <div className="flex items-center gap-3">
-                  <input type="range" min={0} max={50} step={1} value={tempPercent} onChange={(e) => setTempPercent(Number(e.target.value))} />
-                  <span className="w-10 text-right">{tempPercent}%</span>
-                </div>
-                <div className="text-xs text-gray-500">حالت فعال: {filterOnlyCheaper ? `ارزان‌تر از ${percentOverAllowance}% +` : 'غیرفعال'}</div>
-              </div>
-              <div className="p-4 border-t flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {filterOnlyCheaper && (
-                    <div className="flex items-center gap-2 text-xs bg-red-50 border border-red-200 text-red-700 px-2 py-1 rounded">
-                      <span>Cheaper than {percentOverAllowance}% +</span>
-                      <button
-                        className="hover:underline"
-                        onClick={() => {
-                          setFilterOnlyCheaper(false);
-                          setPercentOverAllowance(0);
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div className="ml-auto flex items-center gap-2">
-                  <button className="px-3 py-2 text-sm rounded-md border" onClick={() => setIsFilterModalOpen(false)}>انصراف</button>
-                  <button
-                    className="px-3 py-2 text-sm rounded-md bg-emerald-600 text-white hover:bg-emerald-700"
-                    onClick={() => {
-                      setPercentOverAllowance(tempPercent);
-                      setFilterOnlyCheaper(true);
-                      setIsFilterModalOpen(false);
-                    }}
-                  >
-                    اعمال
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )} */}
-
-
-        {/* Change Price Modal
-        {isChangePriceOpen && (
-          <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4" onClick={() => setIsChangePriceOpen(false)}>
-            <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-              <div className="p-4 border-b">
-                <h3 className="font-bold text-gray-800">تغییر قیمت</h3>
-              </div>
-              <div className="p-4 space-y-3">
-                <label className="text-sm text-gray-600">قیمت جدید (تومان)</label>
-                <input
-                  type="number"
-                  className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  value={priceInput}
-                  onChange={(e) => setPriceInput(e.target.value)}
-                  min={0}
-                />
-                <p className="text-xs text-gray-500">برای اعمال قیمت جدید روی دکمه تایید کلیک کنید.</p>
-              </div>
-              <div className="p-4 border-t flex items-center justify-end gap-2">
-                <button className="px-3 py-2 text-sm rounded-md border" onClick={() => setIsChangePriceOpen(false)}>انصراف</button>
-                <button
-                  className="px-3 py-2 text-sm rounded-md bg-emerald-600 text-white hover:bg-emerald-700"
-                  onClick={() => {
-                    const next = Number(priceInput);
-                    if (!isNaN(next) && next > 0) {
-                      // Price change functionality removed - use external Basalam editing
-                      setToast({ message: 'قیمت با موفقیت به‌روزرسانی شد', type: 'success' });
-                      setTimeout(() => setToast(null), 2000);
-                      setIsChangePriceOpen(false);
-                    }
-                  }}
-                >
-                  تایید
-                </button>
-              </div>
-            </div>
-          </div>
-        )} */}
-
         {/* Competitors Modal */}
         <CompetitorsModal
           isOpen={isCompetitorsModalOpen}
@@ -653,9 +544,6 @@ useExpensiveManagement({
     </div>
   );
 };
-
-
-
 
 
 export default ProductDetail;

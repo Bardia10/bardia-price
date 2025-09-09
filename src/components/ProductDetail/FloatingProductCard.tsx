@@ -1,4 +1,5 @@
 import React from "react";
+import { formatPrice } from "../../lib/format";
 
 type Photo = {
   md?: string;
@@ -35,7 +36,7 @@ const FloatingProductCard: React.FC<Props> = ({ product, expanded, onOpenLightbo
           />
           <div>
             <h3 className="font-semibold text-gray-800 text-sm md:text-base line-clamp-1">{product.title}</h3>
-            <p className="text-emerald-600 font-bold text-sm md:text-md">{product.price.toLocaleString()} تومان</p>
+            <p className="text-emerald-600 font-bold text-sm md:text-md">{formatPrice(product.price)}</p>
           </div>
         </div>
         <span className="text-blue-600 text-xs select-none">{expanded ? 'نمایش کمتر' : 'مشاهده کامل'}</span>
@@ -45,7 +46,7 @@ const FloatingProductCard: React.FC<Props> = ({ product, expanded, onOpenLightbo
         <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
           <div className="col-span-2">
             <p className="text-gray-700">شناسه محصول: {product.id}</p>
-            <p className="text-gray-700">قیمت: {product.price.toLocaleString()} تومان</p>
+            <p className="text-gray-700">قیمت: {formatPrice(product.price)}</p>
           </div>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             {Array.isArray(product.photos) && product.photos.map((p: Photo, i: number) => {
