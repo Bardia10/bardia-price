@@ -8,6 +8,7 @@ export type ConfirmedCompetitorDetail = {
   price: number;
   photo: string;
   vendorIdentifier: string;
+  vendorTitle: string; // ✅ new field
   productUrl: string;
 };
 
@@ -46,17 +47,26 @@ export function useCompetitors(
             data?.product?.variants?.[0]?.price ??
             0
         ) || 0;
+
       const photoObj = data?.photo || data?.product?.photo || null;
       const photo =
         typeof photoObj === "string"
           ? photoObj
           : photoObj?.md || photoObj?.original || photoObj?.sm || photoObj?.xs || "";
+
+      // ✅ Try to grab vendor.title
+      const vendorTitle =
+        data?.vendor?.title ??
+        data?.product?.vendor?.title ??
+        "";
+
       return {
         id,
         title,
         price,
         photo,
         vendorIdentifier,
+        vendorTitle,
         productUrl: `https://basalam.com/${encodeURIComponent(vendorIdentifier)}/product/${encodeURIComponent(id)}`
       };
     };
