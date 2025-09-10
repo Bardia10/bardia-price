@@ -97,10 +97,11 @@ export function useCompetitors(
         const bulkData = await productService.fetchBulkProducts(authorizedFetch, competitorIds);
         let products = Array.isArray(bulkData?.data) ? bulkData.data : [];
 
-        // ✅ Filter only products with status === 2976 (string or number)
+        // ✅ Filter only products with status === 2976 and inventory > 0
         products = products.filter((prod: any) => {
           const status = prod?.status.value ?? prod?.product?.status.value;
-          return String(status) === "2976";
+          const inventory = prod?.inventory ?? prod?.product?.inventory;
+          return String(status) === "2976" && Number(inventory) > 0;
         });
 
         const details: ConfirmedCompetitorDetail[] = products.map((prod: any) => {
