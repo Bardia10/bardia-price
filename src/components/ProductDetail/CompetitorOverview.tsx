@@ -1,8 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Eye } from "lucide-react";
 import LoadingSpinner from "../LoadingSpinner";
 import { formatPrice } from "../../lib/format";
-
 
 type Competitor = {
   id: number;
@@ -19,6 +18,7 @@ interface Props {
   confirmedCompetitorDetails: Competitor[];
   lowestCompetitor: Competitor | null;
   averageCompetitorPrice: number;
+  competitorsCount: number; // ✅ new prop from hook
   lowestBadgeText: string;
   lowestBadgeClass: string;
   avgBadgeText: string;
@@ -32,19 +32,38 @@ const CompetitorOverview: React.FC<Props> = ({
   confirmedCompetitorDetails,
   lowestCompetitor,
   averageCompetitorPrice,
+  competitorsCount,
   lowestBadgeText,
   lowestBadgeClass,
   avgBadgeText,
   avgBadgeClass,
   onOpenModal,
 }) => {
+  useEffect(() => {
+    console.log("[CompetitorOverview] Props:", {
+      isLoadingConfirmedCompetitors,
+      confirmedCompetitorsError,
+      confirmedCompetitorDetails,
+      lowestCompetitor,
+      averageCompetitorPrice,
+      competitorsCount,
+    });
+  }, [
+    isLoadingConfirmedCompetitors,
+    confirmedCompetitorsError,
+    confirmedCompetitorDetails,
+    lowestCompetitor,
+    averageCompetitorPrice,
+    competitorsCount,
+  ]);
+
   return (
     <div className="bg-white p-4 rounded-xl shadow-md mb-4 flex flex-col items-center">
       <h2 className="text-xl font-bold text-gray-800 mb-2">بررسی رقیب ها</h2>
       <span className="text-lg text-gray-500 mb-6">
         {isLoadingConfirmedCompetitors
           ? "در حال بارگذاری..."
-          : `${confirmedCompetitorDetails.length} رقیب`}
+          : `${competitorsCount} رقیب`} {/* ✅ now uses backend count */}
       </span>
 
       {isLoadingConfirmedCompetitors ? (

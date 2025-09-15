@@ -10,7 +10,6 @@ import { AppContext } from "../context/AppContext";
 // components
 import { Header } from "../components/Header";
 import { LoadingSpinner } from "../components/LoadingSpinner";
-import { Modal } from "../components/Modal";
 
 // utils
 import { formatPrice } from "../lib/format";
@@ -22,8 +21,8 @@ import { ApiError } from "../services/apiError";
 
 import { useProductDetail } from "../hooks/useProductDetail"; 
 import { useSimilars } from "../hooks/useSimilars"; 
-import { useCompetitors } from "../hooks/useCompetitors"; 
 import { useExpensiveManagement } from "../hooks/useExpensiveManagement"; 
+import {  useCompetitorsOverview} from "../hooks/useCompetitorsOverview"; 
 
 import FloatingProductCard from '../components/ProductDetail/FloatingProductCard';
 import CompetitorOverview from '../components/ProductDetail/CompetitorOverview';
@@ -205,11 +204,22 @@ const ProductDetail = () => {
 );
 
 
+
 const {
-  confirmedCompetitorDetails,
   isLoadingConfirmedCompetitors,
-  confirmedCompetitorsError
-} = useCompetitors(selectedProduct, authorizedFetch, basalamToken, setBasalamToken, navigate, refreshTrigger);
+  confirmedCompetitorsError,
+  confirmedCompetitorDetails,
+  lowestCompetitor,
+  averageCompetitorPrice,
+  competitorsCount, // ✅ added backend count
+  lowestBadgeText,
+  lowestBadgeClass,
+  avgBadgeText,
+  avgBadgeClass,
+} = useCompetitorsOverview(
+  authorizedFetch,
+  productDetail?.id // ✅ safe access
+);
 
 
 
@@ -344,43 +354,9 @@ useExpensiveManagement({
     }
   };
 
-  // Show loading spinner if product detail is loading or not available
-  // --- Competitor price comparison logic ---
-  let lowestCompetitor = null;
-  let averageCompetitorPrice = 0;
-  let lowestBadgeText = '';
-  let lowestBadgeClass = '';
-  let avgBadgeText = '';
-  let avgBadgeClass = '';
-  if (confirmedCompetitorDetails && confirmedCompetitorDetails.length > 0 && productDetail) {
-    const pricedCompetitors = confirmedCompetitorDetails.filter(c => typeof c.price === 'number' && c.price > 0);
-    lowestCompetitor = pricedCompetitors.length > 0 ? pricedCompetitors.reduce((min, c) => (c.price < min.price ? c : min), pricedCompetitors[0]) : null;
-    averageCompetitorPrice = pricedCompetitors.length > 0 ? Math.round(pricedCompetitors.reduce((sum, c) => sum + c.price, 0) / pricedCompetitors.length) : 0;
-    if (lowestCompetitor) {
-      if (lowestCompetitor.price < productDetail.price) {
-        lowestBadgeText = `-${Math.round((productDetail.price - lowestCompetitor.price) / lowestCompetitor.price * 100)}% ارزان‌تر از شما`;
-        lowestBadgeClass = 'bg-red-50 text-red-700 border-red-200';
-      } else if (lowestCompetitor.price > productDetail.price) {
-        lowestBadgeText = `+${Math.round((lowestCompetitor.price - productDetail.price) / productDetail.price * 100)}% گران‌تر از شما`;
-        lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
-      } else {
-        lowestBadgeText = '=';
-        lowestBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
-      }
-    }
-    if (averageCompetitorPrice > 0) {
-      if (averageCompetitorPrice < productDetail.price) {
-        avgBadgeText = `-${Math.round((productDetail.price - averageCompetitorPrice) / averageCompetitorPrice * 100)}% ارزان‌تر از شما   `;
-        avgBadgeClass = 'bg-red-50 text-red-700 border-red-200';
-      } else if (averageCompetitorPrice > productDetail.price) {
-        avgBadgeText = `+${Math.round((averageCompetitorPrice - productDetail.price) / productDetail.price * 100)}% گران‌تر از شما   `;
-        avgBadgeClass = 'bg-green-50 text-green-700 border-green-200';
-      } else {
-        avgBadgeText = '=';
-        avgBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
-      }
-    }
-  }
+
+
+
   if (!selectedProduct || isLoadingProductDetail) {
     return <LoadingSpinner />;
   }
@@ -484,6 +460,7 @@ useExpensiveManagement({
           confirmedCompetitorDetails={confirmedCompetitorDetails}
           lowestCompetitor={lowestCompetitor}
           averageCompetitorPrice={averageCompetitorPrice}
+          competitorsCount={competitorsCount} // ✅ pass backend count from hook
           lowestBadgeText={lowestBadgeText}
           lowestBadgeClass={lowestBadgeClass}
           avgBadgeText={avgBadgeText}

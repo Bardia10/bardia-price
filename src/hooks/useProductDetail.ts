@@ -25,7 +25,10 @@ export function useProductDetail(
       setProductDetailError(null);
       try {
         const data = await productService.fetchProductDetail(authorizedFetch, selectedProduct.id);
-        if (!cancelled) setProductDetail(data);
+        if (!cancelled) {
+          setProductDetail(data);
+          console.log("[useProductDetail] productDetail returned:", data);
+        }
       } catch (err: any) {
         if (err instanceof ApiError && err.status === 401) {
           setBasalamToken("");

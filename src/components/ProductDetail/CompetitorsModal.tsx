@@ -127,7 +127,7 @@ const CompetitorsModal: React.FC<CompetitorsModalProps> = ({
                         onClick={() =>
                           window.open(
                             comp.productUrl ||
-                              `https://basalam.com/product/${comp.id}`,
+                              `https://basalam.com/${comp.vendorIdentifier}/product/${comp.id}`,
                             "_blank"
                           )
                         }

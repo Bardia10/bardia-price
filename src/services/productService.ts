@@ -155,3 +155,32 @@ export async function addCompetitor(
   }
   return data;
 }
+
+
+
+/** Fetch competitors overview: GET /v1/competitors-overview */
+export async function fetchCompetitorsOverview(
+  authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
+  productId: string | number
+) {
+  const url = apiUrl(`/v1/competitors-overview?product_id=${encodeURIComponent(String(productId))}`);
+  const res = await authorizedFetch(url);
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      (data && (data.message || data.error)) || "خطا در دریافت خلاصه رقبا",
+      data
+    );
+  }
+
+  return {
+    minPrice: typeof data?.min_price === "number" ? data.min_price : 0,
+    averagePrice: typeof data?.average_price === "number" ? data.average_price : 0,
+    competitorsCount: typeof data?.competitors_count === "number" ? data.competitors_count : 0,
+    competitors: Array.isArray(data?.competitors) ? data.competitors : [],
+  };
+}
+
+
