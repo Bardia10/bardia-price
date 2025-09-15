@@ -42,6 +42,8 @@ const ProductDetail = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   // State for deleting competitor IDs
   const [deletingCompetitorIds, setDeletingCompetitorIds] = useState<Set<number>>(new Set());
+  // State for locally removed competitor IDs to handle optimistic UI updates
+  const [locallyRemovedCompetitorIds, setLocallyRemovedCompetitorIds] = useState<Set<number>>(new Set());
 
   const { navigate, selectedProduct, authorizedFetch, basalamToken, setGlobalLoading, lastNavigation, setBasalamToken } = useContext(AppContext);
   // Track where user came from (sessionStorage fallback)
@@ -98,6 +100,15 @@ const ProductDetail = () => {
 
     try {
       await productService.deleteCompetitor(authorizedFetch, selectedProduct.id, competitorId);
+
+      setSearchResults(prevResults =>
+        prevResults.map((s: any) =>
+          s.id === competitorId ? { ...s, isCompetitor: false } : s
+        )
+      );
+
+      setLocallyRemovedCompetitorIds(prev => new Set(prev).add(competitorId));
+
       setRefreshTrigger(v => v + 1);
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 401) {
@@ -129,6 +140,8 @@ const ProductDetail = () => {
         s.id === competitorId ? { ...s, isCompetitor: false } : s
       )
     );
+
+    setLocallyRemovedCompetitorIds(prev => new Set(prev).add(competitorId));
 
     setToast({ message: `رقیب حذف شد`, type: 'success' });
     setTimeout(() => setToast(null), 2000);
@@ -330,7 +343,7 @@ useExpensiveManagement({
     })
     .map((p: any) => ({
       ...p,
-      isCompetitor: competitorIds.has(Number(p.id)),
+      isCompetitor: (p.isCompetitor || competitorIds.has(Number(p.id))) && !locallyRemovedCompetitorIds.has(Number(p.id)),
     }));
 
 
