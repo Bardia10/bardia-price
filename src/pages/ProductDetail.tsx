@@ -231,7 +231,8 @@ const {
   avgBadgeClass,
 } = useCompetitorsOverview(
   authorizedFetch,
-  productDetail?.id // ✅ safe access
+  productDetail?.id, // ✅ safe access
+  refreshTrigger
 );
 
 

@@ -26,7 +26,8 @@ interface UseCompetitorsResult {
 
 export function useCompetitorsOverview(
   authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
-  productId: number | string
+  productId: number | string,
+  refreshTrigger?: number
 ): UseCompetitorsResult {
   const [isLoadingConfirmedCompetitors, setIsLoading] = useState(true);
   const [confirmedCompetitorsError, setError] = useState<string | null>(null);
@@ -119,7 +120,7 @@ export function useCompetitorsOverview(
       active = false;
       console.log("[useCompetitorsOverview] Cleanup — request cancelled");
     };
-  }, [authorizedFetch, productId]);
+  }, [authorizedFetch, productId, refreshTrigger]);
 
   return {
     isLoadingConfirmedCompetitors,
