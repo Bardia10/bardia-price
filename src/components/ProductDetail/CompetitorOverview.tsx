@@ -73,9 +73,9 @@ const CompetitorOverview: React.FC<Props> = ({
         <p className="text-red-600 text-sm">{confirmedCompetitorsError}</p>
       ) : confirmedCompetitorDetails.length > 0 ? (
         <>
-          <div className="mb-3 space-y-1">
+          <div className="mb-3 space-y-3">
             {lowestCompetitor && (
-              <div className="flex flex-wrap items-center gap-2 text-lg">
+              <div className="flex flex-wrap items-center gap-2 text-lg p-2 rounded-lg border border-gray-100 shadow-sm bg-gray-50/30">
                 <span className="font-semibold text-gray-800">
                   کمترین قیمت رقیب:
                 </span>
@@ -89,7 +89,7 @@ const CompetitorOverview: React.FC<Props> = ({
             )}
 
             {averageCompetitorPrice > 0 && (
-              <div className="flex flex-wrap items-center gap-2 text-lg mt-1">
+              <div className="flex flex-wrap items-center gap-2 text-lg mt-1 p-2 rounded-lg border border-gray-100 shadow-sm bg-gray-50/30">
                 <span className="font-semibold">میانگین قیمت رقبا:</span>{" "}
                 {formatPrice(averageCompetitorPrice)}
                 <span
