@@ -232,6 +232,7 @@ const {
 } = useCompetitorsOverview(
   authorizedFetch,
   productDetail?.id, // ✅ safe access
+  productDetail?.price || 0, // Pass product price for comparison
   refreshTrigger
 );
 

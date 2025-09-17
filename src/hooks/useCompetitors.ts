@@ -55,8 +55,8 @@ export function useCompetitors(
           : photoObj?.md || photoObj?.original || photoObj?.sm || photoObj?.xs || "";
 
       const vendorTitle =
-        data?.vendor?.title ??
-        data?.product?.vendor?.title ??
+        data?.vendor?.identifier ??
+        data?.product?.vendor?.identifier ??
         "";
 
       return {

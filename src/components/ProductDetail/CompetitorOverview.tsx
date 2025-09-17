@@ -9,6 +9,7 @@ type Competitor = {
   price: number;
   photo: string;
   vendorIdentifier: string;
+  vendorTitle: string; // Add vendorTitle field
   productUrl: string;
 };
 

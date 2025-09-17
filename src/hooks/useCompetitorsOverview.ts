@@ -8,6 +8,7 @@ type Competitor = {
   price: number;
   photo: string;
   vendorIdentifier: string;
+  vendorTitle: string; // Add vendorTitle field
   productUrl: string;
 };
 
@@ -27,6 +28,7 @@ interface UseCompetitorsResult {
 export function useCompetitorsOverview(
   authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
   productId: number | string,
+  productPrice: number,
   refreshTrigger?: number
 ): UseCompetitorsResult {
   const [isLoadingConfirmedCompetitors, setIsLoading] = useState(true);
@@ -66,6 +68,7 @@ export function useCompetitorsOverview(
           price: raw.price,
           photo: raw.photo.md, // 🔧 change to raw.photo.main.xl if needed
           vendorIdentifier: raw.vendor?.identifier || "",
+          vendorTitle: raw.vendor?.identifier || "", // Add vendorTitle for modal display
           productUrl: raw.product_url || "",
         }));
 
@@ -85,11 +88,49 @@ export function useCompetitorsOverview(
         // Set average price from API
         setAvgPrice(data.averagePrice || 0);
 
-        // Example badge logic — adjust as needed
-        setLowestBadgeText(lowest ? "Lowest" : "");
-        setLowestBadgeClass(lowest ? "border-green-500 text-green-600" : "");
-        setAvgBadgeText(data.averagePrice > 0 ? "Average" : "");
-        setAvgBadgeClass(data.averagePrice > 0 ? "border-blue-500 text-blue-600" : "");
+        // --- Competitor price comparison logic ---
+        let lowestBadgeText = '';
+        let lowestBadgeClass = '';
+        let avgBadgeText = '';
+        let avgBadgeClass = '';
+
+        if (transformed && transformed.length > 0 && productPrice > 0) {
+          const pricedCompetitors = transformed.filter(c => typeof c.price === 'number' && c.price > 0);
+          const lowestCompetitor = pricedCompetitors.length > 0 ? pricedCompetitors.reduce((min, c) => (c.price < min.price ? c : min), pricedCompetitors[0]) : null;
+          // Use API-provided average price instead of recalculating
+          const averageCompetitorPrice = data.averagePrice || 0;
+
+          if (lowestCompetitor) {
+            if (lowestCompetitor.price < productPrice) {
+              lowestBadgeText = `-${Math.round((productPrice - lowestCompetitor.price) / lowestCompetitor.price * 100)}% ارزان‌تر از شما`;
+              lowestBadgeClass = 'bg-red-50 text-red-700 border-red-200';
+            } else if (lowestCompetitor.price > productPrice) {
+              lowestBadgeText = `+${Math.round((lowestCompetitor.price - productPrice) / productPrice * 100)}% گران‌تر از شما`;
+              lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
+            } else {
+              lowestBadgeText = '=';
+              lowestBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+            }
+          }
+
+          if (averageCompetitorPrice > 0) {
+            if (averageCompetitorPrice < productPrice) {
+              avgBadgeText = `-${Math.round((productPrice - averageCompetitorPrice) / averageCompetitorPrice * 100)}% ارزان‌تر از شما`;
+              avgBadgeClass = 'bg-red-50 text-red-700 border-red-200';
+            } else if (averageCompetitorPrice > productPrice) {
+              avgBadgeText = `+${Math.round((averageCompetitorPrice - productPrice) / productPrice * 100)}% گران‌تر از شما`;
+              avgBadgeClass = 'bg-green-50 text-green-700 border-green-200';
+            } else {
+              avgBadgeText = '=';
+              avgBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+            }
+          }
+        }
+
+        setLowestBadgeText(lowestBadgeText);
+        setLowestBadgeClass(lowestBadgeClass);
+        setAvgBadgeText(avgBadgeText);
+        setAvgBadgeClass(avgBadgeClass);
 
         console.log("[useCompetitorsOverview] State updated:", {
           competitors: transformed,
@@ -120,7 +161,7 @@ export function useCompetitorsOverview(
       active = false;
       console.log("[useCompetitorsOverview] Cleanup — request cancelled");
     };
-  }, [authorizedFetch, productId, refreshTrigger]);
+  }, [authorizedFetch, productId, productPrice, refreshTrigger]);
 
   return {
     isLoadingConfirmedCompetitors,
