@@ -1,12 +1,18 @@
 import React from "react";
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import LoadingSpinner from "../LoadingSpinner";
 import { formatPrice } from "../../lib/format";
+import { CompetitorV2 } from "../../hooks/useCompetitorsV2";
 
 interface CompetitorsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  confirmedCompetitorDetails: any[];
+  competitors: CompetitorV2[];
+  isLoading: boolean;
+  error: string | null;
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  onLoadMore: () => void;
   selectedProductPrice: number;
   deletingCompetitorIds: Set<number>;
   handleDeleteCompetitor: (id: number) => void;
@@ -15,7 +21,12 @@ interface CompetitorsModalProps {
 const CompetitorsModal: React.FC<CompetitorsModalProps> = ({
   isOpen,
   onClose,
-  confirmedCompetitorDetails,
+  competitors,
+  isLoading,
+  error,
+  hasMore,
+  isLoadingMore,
+  onLoadMore,
   selectedProductPrice,
   deletingCompetitorIds,
   handleDeleteCompetitor,
@@ -38,7 +49,15 @@ const CompetitorsModal: React.FC<CompetitorsModalProps> = ({
           </button>
         </div>
         <div className="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
-          {confirmedCompetitorDetails.length === 0 ? (
+          {isLoading && competitors.length === 0 ? (
+            <div className="flex justify-center py-8">
+              <LoadingSpinner />
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <p className="text-red-500 mb-4">{error}</p>
+            </div>
+          ) : competitors.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500 mb-4">هنوز رقیبی اضافه نشده است.</p>
               <p className="text-sm text-gray-400">
@@ -46,16 +65,17 @@ const CompetitorsModal: React.FC<CompetitorsModalProps> = ({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {[...confirmedCompetitorDetails]
-                .sort((a, b) => {
-                  if (typeof a.price === "number" && typeof b.price === "number")
-                    return a.price - b.price;
-                  if (typeof a.price === "number") return -1;
-                  if (typeof b.price === "number") return 1;
-                  return a.id - b.id;
-                })
-                .map((comp) => {
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {[...competitors]
+                  .sort((a, b) => {
+                    if (typeof a.price === "number" && typeof b.price === "number")
+                      return a.price - b.price;
+                    if (typeof a.price === "number") return -1;
+                    if (typeof b.price === "number") return 1;
+                    return a.id - b.id;
+                  })
+                  .map((comp) => {
                   const cheaper =
                     typeof comp.price === "number" &&
                     comp.price > 0 &&
@@ -137,7 +157,31 @@ const CompetitorsModal: React.FC<CompetitorsModalProps> = ({
                     </div>
                   );
                 })}
-            </div>
+              </div>
+              
+              {/* Show More Button */}
+              {hasMore && (
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={onLoadMore}
+                    disabled={isLoadingMore}
+                    className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        در حال بارگذاری...
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={16} />
+                        نمایش بیشتر
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

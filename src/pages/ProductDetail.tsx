@@ -22,7 +22,8 @@ import { ApiError } from "../services/apiError";
 import { useProductDetail } from "../hooks/useProductDetail"; 
 import { useSimilars } from "../hooks/useSimilars"; 
 import { useExpensiveManagement } from "../hooks/useExpensiveManagement"; 
-import {  useCompetitorsOverview} from "../hooks/useCompetitorsOverview"; 
+import { useCompetitorsOverview } from "../hooks/useCompetitorsOverview"; 
+import { useCompetitorsV2 } from "../hooks/useCompetitorsV2"; 
 
 import FloatingProductCard from '../components/ProductDetail/FloatingProductCard';
 import CompetitorOverview from '../components/ProductDetail/CompetitorOverview';
@@ -233,6 +234,20 @@ const {
   authorizedFetch,
   productDetail?.id, // ✅ safe access
   productDetail?.price || 0, // Pass product price for comparison
+  refreshTrigger
+);
+
+// New hook for competitors modal with pagination
+const {
+  competitors: competitorsV2,
+  isLoading: isLoadingCompetitorsV2,
+  error: competitorsV2Error,
+  hasMore: hasMoreCompetitors,
+  isLoadingMore: isLoadingMoreCompetitors,
+  loadMore: loadMoreCompetitors,
+} = useCompetitorsV2(
+  authorizedFetch,
+  productDetail?.id,
   refreshTrigger
 );
 
@@ -526,7 +541,12 @@ useExpensiveManagement({
         <CompetitorsModal
           isOpen={isCompetitorsModalOpen}
           onClose={() => setIsCompetitorsModalOpen(false)}
-          confirmedCompetitorDetails={confirmedCompetitorDetails}
+          competitors={competitorsV2}
+          isLoading={isLoadingCompetitorsV2}
+          error={competitorsV2Error}
+          hasMore={hasMoreCompetitors}
+          isLoadingMore={isLoadingMoreCompetitors}
+          onLoadMore={loadMoreCompetitors}
           selectedProductPrice={selectedProduct.price}
           deletingCompetitorIds={deletingCompetitorIds}
           handleDeleteCompetitor={handleDeleteCompetitor}

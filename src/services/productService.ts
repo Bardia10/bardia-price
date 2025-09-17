@@ -183,4 +183,28 @@ export async function fetchCompetitorsOverview(
   };
 }
 
+/** Fetch competitors v2 (paginated): GET /v2/competitors */
+export async function fetchCompetitorsV2(
+  authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
+  productId: string | number,
+  page: number = 1
+) {
+  const url = apiUrl(`/v2/competitors?product_id=${encodeURIComponent(String(productId))}&page=${page}`);
+  const res = await authorizedFetch(url);
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      (data && (data.message || data.error)) || "خطا در دریافت رقبا",
+      data
+    );
+  }
+
+  return {
+    products: Array.isArray(data?.products) ? data.products : [],
+    hasMore: Array.isArray(data?.products) && data.products.length > 0,
+  };
+}
+
 
