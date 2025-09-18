@@ -51,7 +51,7 @@ const ExpensiveProductsPage = () => {
     setGlobalLoading(true);
     setApiError(null);
     try {
-      const res = await authorizedFetch(apiUrl+'/expensives');
+      const res = await authorizedFetch(apiUrl+'/v2/expensives');
       let data: any = null;
       try { data = await res.json(); } catch {}
       if (!res.ok) {
