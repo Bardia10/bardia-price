@@ -222,9 +222,9 @@ const ProductDetail = () => {
 const {
   isLoadingConfirmedCompetitors,
   confirmedCompetitorsError,
-  confirmedCompetitorDetails,
   lowestCompetitor,
   averageCompetitorPrice,
+  lowestCompetitorPrice, // ✅ new - actual min price from backend
   competitorsCount, // ✅ added backend count
   lowestBadgeText,
   lowestBadgeClass,
@@ -257,7 +257,7 @@ const {
 useExpensiveManagement({
   selectedProduct,
   productDetail,
-  confirmedCompetitorDetails,
+  confirmedCompetitorDetails: competitorsV2,
   authorizedFetch,
   basalamToken,
   setBasalamToken,
@@ -346,7 +346,7 @@ useExpensiveManagement({
 
  // Normalize competitor IDs
   const competitorIds = new Set(
-    confirmedCompetitorDetails.map((c: any) => Number(c.id))
+    competitorsV2.map((c: any) => Number(c.id))
   );
 
   const sortedSimilars = searchResults
@@ -487,9 +487,9 @@ useExpensiveManagement({
         <CompetitorOverview
           isLoadingConfirmedCompetitors={isLoadingConfirmedCompetitors}
           confirmedCompetitorsError={confirmedCompetitorsError}
-          confirmedCompetitorDetails={confirmedCompetitorDetails}
           lowestCompetitor={lowestCompetitor}
           averageCompetitorPrice={averageCompetitorPrice}
+          lowestCompetitorPrice={lowestCompetitorPrice} // ✅ pass min price from backend
           competitorsCount={competitorsCount} // ✅ pass backend count from hook
           lowestBadgeText={lowestBadgeText}
           lowestBadgeClass={lowestBadgeClass}

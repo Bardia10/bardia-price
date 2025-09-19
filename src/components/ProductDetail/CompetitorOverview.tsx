@@ -16,9 +16,9 @@ type Competitor = {
 interface Props {
   isLoadingConfirmedCompetitors: boolean;
   confirmedCompetitorsError: string | null;
-  confirmedCompetitorDetails: Competitor[];
   lowestCompetitor: Competitor | null;
   averageCompetitorPrice: number;
+  lowestCompetitorPrice: number; // ✅ new - actual min price from backend
   competitorsCount: number; // ✅ new prop from hook
   lowestBadgeText: string;
   lowestBadgeClass: string;
@@ -30,9 +30,9 @@ interface Props {
 const CompetitorOverview: React.FC<Props> = ({
   isLoadingConfirmedCompetitors,
   confirmedCompetitorsError,
-  confirmedCompetitorDetails,
   lowestCompetitor,
   averageCompetitorPrice,
+  lowestCompetitorPrice, // ✅ new - actual min price from backend
   competitorsCount,
   lowestBadgeText,
   lowestBadgeClass,
@@ -44,17 +44,17 @@ const CompetitorOverview: React.FC<Props> = ({
     console.log("[CompetitorOverview] Props:", {
       isLoadingConfirmedCompetitors,
       confirmedCompetitorsError,
-      confirmedCompetitorDetails,
       lowestCompetitor,
       averageCompetitorPrice,
+      lowestCompetitorPrice,
       competitorsCount,
     });
   }, [
     isLoadingConfirmedCompetitors,
     confirmedCompetitorsError,
-    confirmedCompetitorDetails,
     lowestCompetitor,
     averageCompetitorPrice,
+    lowestCompetitorPrice,
     competitorsCount,
   ]);
 
@@ -71,15 +71,17 @@ const CompetitorOverview: React.FC<Props> = ({
         <LoadingSpinner />
       ) : confirmedCompetitorsError ? (
         <p className="text-red-600 text-sm">{confirmedCompetitorsError}</p>
-      ) : confirmedCompetitorDetails.length > 0 ? (
+      ) : competitorsCount > 0 ? (
         <>
           <div className="mb-3 space-y-3">
-            {lowestCompetitor && (
+            {lowestBadgeText && lowestCompetitorPrice > 0 && (
               <div className="flex flex-wrap items-center gap-2 text-lg p-2 rounded-lg border border-gray-100 shadow-sm bg-gray-50/30">
                 <span className="font-semibold text-gray-800">
-                  کمترین قیمت رقیب:
+                  مقایسه با کمترین قیمت رقیب:
                 </span>
-                <span>{formatPrice(lowestCompetitor.price)}</span>
+                <span className="text-emerald-600 font-bold">
+                  {formatPrice(lowestCompetitorPrice)}
+                </span>
                 <span
                   className={`px-2 py-0.5 rounded text-md border ${lowestBadgeClass}`}
                 >

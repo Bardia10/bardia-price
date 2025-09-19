@@ -15,9 +15,9 @@ type Competitor = {
 interface UseCompetitorsResult {
   isLoadingConfirmedCompetitors: boolean;
   confirmedCompetitorsError: string | null;
-  confirmedCompetitorDetails: Competitor[];
   lowestCompetitor: Competitor | null;
   averageCompetitorPrice: number;
+  lowestCompetitorPrice: number; // ✅ new - actual min price from backend
   competitorsCount: number; // ✅ new
   lowestBadgeText: string;
   lowestBadgeClass: string;
@@ -33,9 +33,9 @@ export function useCompetitorsOverview(
 ): UseCompetitorsResult {
   const [isLoadingConfirmedCompetitors, setIsLoading] = useState(true);
   const [confirmedCompetitorsError, setError] = useState<string | null>(null);
-  const [confirmedCompetitorDetails, setDetails] = useState<Competitor[]>([]);
   const [lowestCompetitor, setLowestCompetitor] = useState<Competitor | null>(null);
   const [averageCompetitorPrice, setAvgPrice] = useState(0);
+  const [lowestCompetitorPrice, setLowestPrice] = useState(0); // ✅ new - min price from backend
   const [competitorsCount, setCompetitorsCount] = useState(0); // ✅ new
   const [lowestBadgeText, setLowestBadgeText] = useState("");
   const [lowestBadgeClass, setLowestBadgeClass] = useState("");
@@ -61,32 +61,14 @@ export function useCompetitorsOverview(
 
         if (!active) return;
 
-        // Transform raw competitors into your expected shape
-        const transformed: Competitor[] = (data.competitors || []).map((raw: any) => ({
-          id: raw.id,
-          title: raw.title,
-          price: raw.price,
-          photo: raw.photo.md, // 🔧 change to raw.photo.main.xl if needed
-          vendorIdentifier: raw.vendor?.identifier || "",
-          vendorTitle: raw.vendor?.identifier || "", // Add vendorTitle for modal display
-          productUrl: raw.product_url || "",
-        }));
-
-        setDetails(transformed);
-        setCompetitorsCount(data.competitorsCount || 0); // ✅ store backend count
-
-        // Calculate lowest competitor from the top 5
-        let lowest: Competitor | null = null;
-        if (transformed.length > 0) {
-          lowest = transformed.reduce(
-            (min: Competitor, c: Competitor) => (c.price < min.price ? c : min),
-            transformed[0]
-          );
-        }
-        setLowestCompetitor(lowest);
-
-        // Set average price from API
+        // Store summary data from API
+        setCompetitorsCount(data.competitorsCount || 0);
         setAvgPrice(data.averagePrice || 0);
+        setLowestPrice(data.minPrice || 0); // ✅ store min price from backend
+
+        // For the overview, we only need summary data
+        // The detailed competitor list is now handled by useCompetitorsV2
+        setLowestCompetitor(null); // Will be calculated differently if needed
 
         // --- Competitor price comparison logic ---
         let lowestBadgeText = '';
@@ -94,18 +76,18 @@ export function useCompetitorsOverview(
         let avgBadgeText = '';
         let avgBadgeClass = '';
 
-        if (transformed && transformed.length > 0 && productPrice > 0) {
-          const pricedCompetitors = transformed.filter(c => typeof c.price === 'number' && c.price > 0);
-          const lowestCompetitor = pricedCompetitors.length > 0 ? pricedCompetitors.reduce((min, c) => (c.price < min.price ? c : min), pricedCompetitors[0]) : null;
-          // Use API-provided average price instead of recalculating
+        if (data.competitorsCount > 0 && productPrice > 0) {
+          // Use API-provided average price for comparison
           const averageCompetitorPrice = data.averagePrice || 0;
+          const minPrice = data.minPrice || 0;
 
-          if (lowestCompetitor) {
-            if (lowestCompetitor.price < productPrice) {
-              lowestBadgeText = `-${Math.round((productPrice - lowestCompetitor.price) / lowestCompetitor.price * 100)}% ارزان‌تر از شما`;
+          // Compare with lowest price if available
+          if (minPrice > 0) {
+            if (minPrice < productPrice) {
+              lowestBadgeText = `-${Math.round((productPrice - minPrice) / minPrice * 100)}% ارزان‌تر از شما`;
               lowestBadgeClass = 'bg-red-50 text-red-700 border-red-200';
-            } else if (lowestCompetitor.price > productPrice) {
-              lowestBadgeText = `+${Math.round((lowestCompetitor.price - productPrice) / productPrice * 100)}% گران‌تر از شما`;
+            } else if (minPrice > productPrice) {
+              lowestBadgeText = `+${Math.round((minPrice - productPrice) / productPrice * 100)}% گران‌تر از شما`;
               lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
             } else {
               lowestBadgeText = '=';
@@ -113,6 +95,7 @@ export function useCompetitorsOverview(
             }
           }
 
+          // Compare with average price
           if (averageCompetitorPrice > 0) {
             if (averageCompetitorPrice < productPrice) {
               avgBadgeText = `-${Math.round((productPrice - averageCompetitorPrice) / averageCompetitorPrice * 100)}% ارزان‌تر از شما`;
@@ -133,10 +116,9 @@ export function useCompetitorsOverview(
         setAvgBadgeClass(avgBadgeClass);
 
         console.log("[useCompetitorsOverview] State updated:", {
-          competitors: transformed,
           competitorsCount: data.competitorsCount,
-          lowestCompetitor: lowest,
-          averagePrice: data.averagePrice
+          averagePrice: data.averagePrice,
+          minPrice: data.minPrice
         });
       } catch (err) {
         if (!active) return;
@@ -166,9 +148,9 @@ export function useCompetitorsOverview(
   return {
     isLoadingConfirmedCompetitors,
     confirmedCompetitorsError,
-    confirmedCompetitorDetails,
     lowestCompetitor,
     averageCompetitorPrice,
+    lowestCompetitorPrice, // ✅ return min price from backend
     competitorsCount, // ✅ return backend count
     lowestBadgeText,
     lowestBadgeClass,
