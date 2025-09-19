@@ -90,7 +90,7 @@ export function useCompetitorsOverview(
               lowestBadgeText = `+${Math.round((minPrice - productPrice) / productPrice * 100)}% گران‌تر از شما`;
               lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
             } else {
-              lowestBadgeText = '=';
+              lowestBadgeText = 'برابر با شما';
               lowestBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
             }
           }
@@ -104,7 +104,7 @@ export function useCompetitorsOverview(
               avgBadgeText = `+${Math.round((averageCompetitorPrice - productPrice) / productPrice * 100)}% گران‌تر از شما`;
               avgBadgeClass = 'bg-green-50 text-green-700 border-green-200';
             } else {
-              avgBadgeText = '=';
+              avgBadgeText = 'برابر با شما';
               avgBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
             }
           }

@@ -77,7 +77,7 @@ const CompetitorOverview: React.FC<Props> = ({
             {lowestBadgeText && lowestCompetitorPrice > 0 && (
               <div className="flex flex-wrap items-center gap-2 text-lg p-2 rounded-lg border border-gray-100 shadow-sm bg-gray-50/30">
                 <span className="font-semibold text-gray-800">
-                  مقایسه با کمترین قیمت رقیب:
+                  کمترین قیمت رقیب ها:
                 </span>
                 <span className="text-emerald-600 font-bold">
                   {formatPrice(lowestCompetitorPrice)}
@@ -92,7 +92,7 @@ const CompetitorOverview: React.FC<Props> = ({
 
             {averageCompetitorPrice > 0 && (
               <div className="flex flex-wrap items-center gap-2 text-lg mt-1 p-2 rounded-lg border border-gray-100 shadow-sm bg-gray-50/30">
-                <span className="font-semibold">میانگین قیمت رقبا:</span>{" "}
+                <span className="font-semibold">میانگین قیمت رقیب ها:</span>{" "}
                 {formatPrice(averageCompetitorPrice)}
                 <span
                   className={`px-2 py-0.5 rounded text-md border ${avgBadgeClass}`}
@@ -109,7 +109,7 @@ const CompetitorOverview: React.FC<Props> = ({
               className="py-2 px-4 bg-orange-500 text-white text-lg font-medium rounded-lg hover:bg-orange-600 transition duration-200 ease-in-out shadow-sm flex items-center gap-2"
             >
               <Eye size={16} />
-              مشاهده همه رقیب های انتخاب شده
+              مشاهده رقیب های انتخاب شده
             </button>
           </div>
         </>
