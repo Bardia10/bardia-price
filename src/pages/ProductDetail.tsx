@@ -549,6 +549,7 @@ useExpensiveManagement({
           onLoadMore={loadMoreCompetitors}
           selectedProductPrice={selectedProduct.price}
           deletingCompetitorIds={deletingCompetitorIds}
+          locallyRemovedCompetitorIds={locallyRemovedCompetitorIds} // ✅ pass optimistic state
           handleDeleteCompetitor={handleDeleteCompetitor}
         />
 

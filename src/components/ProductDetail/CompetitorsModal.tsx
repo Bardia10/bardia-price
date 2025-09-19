@@ -15,6 +15,7 @@ interface CompetitorsModalProps {
   onLoadMore: () => void;
   selectedProductPrice: number;
   deletingCompetitorIds: Set<number>;
+  locallyRemovedCompetitorIds: Set<number>; // ✅ new prop for optimistic updates
   handleDeleteCompetitor: (id: number) => void;
 }
 
@@ -29,6 +30,7 @@ const CompetitorsModal: React.FC<CompetitorsModalProps> = ({
   onLoadMore,
   selectedProductPrice,
   deletingCompetitorIds,
+  locallyRemovedCompetitorIds, // ✅ new prop for optimistic updates
   handleDeleteCompetitor,
 }) => {
   if (!isOpen) return null;
@@ -57,7 +59,7 @@ const CompetitorsModal: React.FC<CompetitorsModalProps> = ({
             <div className="text-center py-8">
               <p className="text-red-500 mb-4">{error}</p>
             </div>
-          ) : competitors.length === 0 ? (
+          ) : competitors.filter(comp => !locallyRemovedCompetitorIds.has(comp.id)).length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500 mb-4">هنوز رقیبی اضافه نشده است.</p>
               <p className="text-sm text-gray-400">
@@ -68,6 +70,7 @@ const CompetitorsModal: React.FC<CompetitorsModalProps> = ({
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {[...competitors]
+                  .filter(comp => !locallyRemovedCompetitorIds.has(comp.id)) // ✅ filter out locally removed competitors
                   .sort((a, b) => {
                     if (typeof a.price === "number" && typeof b.price === "number")
                       return a.price - b.price;
