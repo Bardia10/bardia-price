@@ -3,77 +3,24 @@ import { AppContext } from "../context/AppContext";
 import {Header} from "../components/Header";
 import {LoadingSpinner} from "../components/LoadingSpinner";
 import {MyProductCard} from "../components/MyProductCard";
+import { useExpensiveProducts } from "../hooks/useExpensiveProducts";
+import * as productService from "../services/productService";
+import { ApiError } from "../services/apiError";
 
 const ExpensiveProductsPage = () => {
   const [isReevaluateModalOpen, setIsReevaluateModalOpen] = useState(false);
-  const [isReevaluating, setIsReevaluating] = useState(false);
-  const { navigate, authorizedFetch, basalamToken, setSelectedProduct, setGlobalLoading } = useContext(AppContext);
-  const [products, setProducts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
-  const apiUrl = import.meta.env.VITE_BACKEND_URL;
-
-  // Map API product shape to internal Product type
-  const mapExpensiveProduct = (p: any) => {
-    const id = String(p?.id ?? '');
-    const title = String(p?.title ?? '');
-    const price = Number(p?.price ?? 0);
-    const photoObj = p?.photo || {};
-    const primaryPhoto = photoObj.md || photoObj.sm || photoObj.lg || photoObj.xs || photoObj.original || 'https://placehold.co/200x200/cccccc/333333?text=No+Image';
-    const photos: string[] = [];
-    if (primaryPhoto) photos.push(primaryPhoto);
-    if (photoObj.lg && !photos.includes(photoObj.lg)) photos.push(photoObj.lg);
-    if (photoObj.md && !photos.includes(photoObj.md)) photos.push(photoObj.md);
-    if (photoObj.sm && !photos.includes(photoObj.sm)) photos.push(photoObj.sm);
-    if (photoObj.xs && !photos.includes(photoObj.xs)) photos.push(photoObj.xs);
-    if (photoObj.original && !photos.includes(photoObj.original)) photos.push(photoObj.original);
-    const vendorIdentifier = p?.vendor?.identifier || 'shop';
-    const basalamUrl = `https://basalam.com/${vendorIdentifier}/product/${id}`;
-    const description = p?.description || 'بدون توضیحات';
-    return {
-      id,
-      title,
-      price,
-      photo_id: primaryPhoto,
-      photos,
-      description,
-      basalamUrl,
-      createdAt: new Date().toISOString(),
-    };
-  };
-
-  // Track when reevaluation POST is in progress
   const [pendingReevaluation, setPendingReevaluation] = useState(false);
-
-  // Fetch expensive products
-  const fetchExpensiveProducts = async () => {
-    setIsLoading(true);
-    setGlobalLoading(true);
-    setApiError(null);
-    try {
-      const res = await authorizedFetch(apiUrl+'/v2/expensives');
-      let data: any = null;
-      try { data = await res.json(); } catch {}
-      if (!res.ok) {
-        const message = (data && (data.message || data.error)) || 'خطا در دریافت محصولات غیر رقابتی';
-        throw new Error(message);
-      }
-      const arr = Array.isArray(data?.products) ? data.products : [];
-      setProducts(arr.map(mapExpensiveProduct));
-    } catch (e: any) {
-      setApiError(e?.message || 'خطای نامشخص');
-    } finally {
-      setIsLoading(false);
-      setGlobalLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!basalamToken) return;
-    // If reevaluation is pending, don't fetch until it's done
-    if (pendingReevaluation) return;
-    fetchExpensiveProducts();
-  }, [basalamToken, authorizedFetch, setGlobalLoading, pendingReevaluation]);
+  const { navigate, authorizedFetch, basalamToken, setSelectedProduct, setGlobalLoading, setBasalamToken } = useContext(AppContext);
+  
+  // Use the custom hook for fetching expensive products
+  const { products, isLoading, error } = useExpensiveProducts(
+    authorizedFetch,
+    basalamToken,
+    setBasalamToken,
+    navigate,
+    setGlobalLoading,
+    pendingReevaluation ? 0 : 1 // Refresh when reevaluation is complete
+  );
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
@@ -83,6 +30,33 @@ const ExpensiveProductsPage = () => {
   const handleBasalamPageClick = (e: React.MouseEvent<HTMLButtonElement>, url: string) => {
     e.stopPropagation();
     window.open(url, '_blank');
+  };
+
+  // Handle reevaluation with proper error handling
+  const handleReevaluation = async () => {
+    setPendingReevaluation(true);
+    setIsReevaluateModalOpen(false);
+    setGlobalLoading(true);
+    
+    try {
+      await productService.triggerExpensiveReevaluation(authorizedFetch);
+      // Trigger a refresh by toggling the pendingReevaluation state
+      setTimeout(() => {
+        setPendingReevaluation(false);
+      }, 1000); // Small delay to ensure the reevaluation is processed
+    } catch (err: any) {
+      console.error("[ExpensiveProductsPage] Reevaluation error:", err);
+      
+      // Handle 401 errors consistently
+      if (err instanceof ApiError && err.status === 401) {
+        setBasalamToken("");
+        navigate("login");
+      }
+      
+      setPendingReevaluation(false);
+    } finally {
+      setGlobalLoading(false);
+    }
   };
 
   return (
@@ -118,22 +92,7 @@ const ExpensiveProductsPage = () => {
                   <button
                     className="px-4 py-2 rounded-md bg-orange-600 text-white font-semibold hover:bg-orange-700"
                     disabled={pendingReevaluation}
-                    onClick={async () => {
-                      setPendingReevaluation(true);
-                      setIsReevaluateModalOpen(false);
-                      setIsLoading(true);
-                      setGlobalLoading(true);
-                      try {
-                        await authorizedFetch(apiUrl+'/expensives', {
-                          method: 'POST',
-                          headers: {
-                            'Authorization': `Bearer ${basalamToken}`,
-                            'Content-Type': 'application/json',
-                          },
-                        });
-                      } catch {}
-                      setPendingReevaluation(false);
-                    }}
+                    onClick={handleReevaluation}
                   >
                     تایید
                   </button>
@@ -144,7 +103,7 @@ const ExpensiveProductsPage = () => {
         )}
 
         {isLoading && <LoadingSpinner />}
-        {apiError && <div className="text-red-600 text-sm text-right">{apiError}</div>}
+        {error && <div className="text-red-600 text-sm text-right">{error}</div>}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
           {products.map((product: any) => (
             <MyProductCard

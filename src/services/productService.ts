@@ -207,4 +207,47 @@ export async function fetchCompetitorsV2(
   };
 }
 
+/** Fetch expensive products: GET /v2/expensives */
+export async function fetchExpensiveProducts(
+  authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>
+) {
+  const url = apiUrl(`/v2/expensives`);
+  const res = await authorizedFetch(url);
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      (data && (data.message || data.error)) || "خطا در دریافت محصولات غیر رقابتی",
+      data
+    );
+  }
+
+  return {
+    products: Array.isArray(data?.products) ? data.products : [],
+  };
+}
+
+/** Trigger reevaluation of expensive products: POST /expensives */
+export async function triggerExpensiveReevaluation(
+  authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>
+) {
+  const url = apiUrl(`/expensives`);
+  const res = await authorizedFetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      (data && (data.message || data.error)) || "خطا در ارزیابی دوباره محصولات",
+      data
+    );
+  }
+
+  return data;
+}
+
 
