@@ -90,13 +90,13 @@ const ExpensiveProductsPage = () => {
       <Header title="محصولات با قیمت نامناسب" onBack={() => navigate('dashboard')} />
       <div className="p-4 flex flex-col space-y-4">
         {/* Reevaluate Button */}
-        <button
+        {/* <button
           className="mb-4 px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold shadow hover:bg-orange-700 transition w-fit self-end"
           onClick={() => setIsReevaluateModalOpen(true)}
           disabled={isReevaluating}
         >
           ارزیابی دوباره
-        </button>
+        </button> */}
 
         {/* Modal for confirmation */}
         {isReevaluateModalOpen && (
