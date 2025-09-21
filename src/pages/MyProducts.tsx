@@ -8,7 +8,11 @@ import { Search, ChevronLeft, Package, Sparkles, AlertCircle, Eye, EyeOff, Setti
 
 
 const MyProducts = () => {
-  const { navigate, setSelectedProduct, authorizedFetch, basalamToken, setGlobalLoading, setBasalamToken } = useContext(AppContext);
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('MyProducts must be used within AppContext.Provider');
+  }
+  const { navigate, setSelectedProduct, authorizedFetch, basalamToken, setGlobalLoading, setBasalamToken } = context;
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMorePages, setHasMorePages] = useState(true);
@@ -143,7 +147,7 @@ const MyProducts = () => {
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
-    navigate('product-detail', { from: 'my-products' });
+    navigate('product-detail', { productId: product.id, from: 'my-products' });
   };
 
   const handleBasalamPageClick = (e: React.MouseEvent<HTMLButtonElement>, url: string) => {

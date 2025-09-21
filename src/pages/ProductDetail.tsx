@@ -5,6 +5,7 @@ import React, {
   useRef,
   useCallback
 } from "react";
+import { useParams } from 'react-router-dom';
 import { AppContext } from "../context/AppContext";
 
 // components
@@ -37,6 +38,11 @@ import CompetitorsModal from "../components/ProductDetail/CompetitorsModal";
 
 
 const ProductDetail = () => {
+  // Get product ID from URL parameters
+  const { id: productId } = useParams<{ id: string }>();
+  
+  console.log('[ProductDetail] Component loaded with productId from URL:', productId);
+  
   // Local search for similar products
   const [similarSearchTerm, setSimilarSearchTerm] = useState('');
   // Refresh key to trigger re-fetch
@@ -46,7 +52,18 @@ const ProductDetail = () => {
   // State for locally removed competitor IDs to handle optimistic UI updates
   const [locallyRemovedCompetitorIds, setLocallyRemovedCompetitorIds] = useState<Set<number>>(new Set());
 
-  const { navigate, selectedProduct, authorizedFetch, basalamToken, setGlobalLoading, lastNavigation, setBasalamToken } = useContext(AppContext);
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('ProductDetail must be used within AppContext.Provider');
+  }
+  const { navigate, selectedProduct, authorizedFetch, basalamToken, setGlobalLoading, lastNavigation, setBasalamToken } = context;
+  
+  console.log('[ProductDetail] Context values:', {
+    hasSelectedProduct: !!selectedProduct,
+    selectedProductId: selectedProduct?.id,
+    basalamToken: !!basalamToken,
+    productIdFromUrl: productId
+  });
   // Track where user came from (sessionStorage fallback)
   const [fromSection, setFromSection] = useState<string | null>(null);
   useEffect(() => {
@@ -60,15 +77,35 @@ const ProductDetail = () => {
   }, [lastNavigation]);
 
 
+  // Get the actual product ID to use (from URL parameter or selectedProduct fallback)
+  const actualProductId = productId !== 'current' ? productId : selectedProduct?.id;
+  
+  console.log('[ProductDetail] Product ID resolution:', {
+    urlProductId: productId,
+    selectedProductId: selectedProduct?.id,
+    actualProductId,
+    willFetch: !!actualProductId && !!basalamToken
+  });
+
   // inside ProductDetail component:
   const { productDetail, isLoadingProductDetail, productDetailError } = useProductDetail(
-    selectedProduct,
+    actualProductId,
     basalamToken,
     authorizedFetch,
     setBasalamToken,
     navigate,
     refreshKey
   );
+  
+  console.log('[ProductDetail] useProductDetail results:', {
+    hasProductDetail: !!productDetail,
+    isLoading: isLoadingProductDetail,
+    hasError: !!productDetailError,
+    errorMessage: productDetailError,
+    productDetailId: productDetail?.id
+  });
+
+  console.log('[ProductDetail] About to call other hooks with productDetail:', !!productDetail);
 
 
 
@@ -100,7 +137,7 @@ const ProductDetail = () => {
     setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
 
     try {
-      await productService.deleteCompetitor(authorizedFetch, selectedProduct.id, competitorId);
+      await productService.deleteCompetitor(authorizedFetch, productDetail.id, competitorId);
 
       setSearchResults(prevResults =>
         prevResults.map((s: any) =>
@@ -134,7 +171,7 @@ const ProductDetail = () => {
   setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
 
   try {
-    await productService.deleteCompetitor(authorizedFetch, selectedProduct.id, competitorId);
+    await productService.deleteCompetitor(authorizedFetch, productDetail.id, competitorId);
 
     setSearchResults(prevResults =>
       prevResults.map((s: any) =>
@@ -161,10 +198,11 @@ const ProductDetail = () => {
 };
 
   useEffect(() => {
-    if (!selectedProduct) {
+    // If there's no product ID from URL and no selectedProduct fallback, navigate to my-products
+    if (!actualProductId) {
       navigate('my-products');
     }
-  }, [selectedProduct, navigate]);
+  }, [actualProductId, navigate]);
 
 
   // Map search API response to internal format
@@ -208,7 +246,7 @@ const ProductDetail = () => {
   loadMoreSimilars,
   setSearchResults
 } = useSimilars(
-  selectedProduct,
+  productDetail, // Use productDetail instead of selectedProduct
   basalamToken,
   authorizedFetch,
   mapSearchProduct,
@@ -255,7 +293,7 @@ const {
 
    // Auto-manage product in expensives based on price comparison with competitors
 useExpensiveManagement({
-  selectedProduct,
+  selectedProduct: productDetail, // Use productDetail as the product data
   productDetail,
   confirmedCompetitorDetails: competitorsV2,
   authorizedFetch,
@@ -295,7 +333,7 @@ useExpensiveManagement({
   type SearchProduct = any;
 
   const addAsCompetitor = (similarProduct: SearchProduct) => {
-    if (!selectedProduct?.id || !similarProduct?.id || !similarProduct?.vendorIdentifier) {
+    if (!productDetail?.id || !similarProduct?.id || !similarProduct?.vendorIdentifier) {
       setToast({ message: 'اطلاعات محصول ناقص است', type: 'error' });
       setTimeout(() => setToast(null), 2000);
       return;
@@ -312,7 +350,7 @@ useExpensiveManagement({
       try {
         await productService.addCompetitor(
           authorizedFetch,
-          selectedProduct.id,
+          productDetail.id,
           productId,
           similarProduct.vendorIdentifier
         );
@@ -387,13 +425,34 @@ useExpensiveManagement({
 
 
 
-  if (!selectedProduct || isLoadingProductDetail) {
+  console.log('[ProductDetail] Render conditions:', {
+    hasActualProductId: !!actualProductId,
+    isLoadingProductDetail,
+    hasProductDetail: !!productDetail,
+    hasProductDetailError: !!productDetailError
+  });
+
+  // Show loading if we're still fetching the product detail
+  if (isLoadingProductDetail) {
+    console.log('[ProductDetail] Showing loading because isLoadingProductDetail is true');
     return <LoadingSpinner />;
   }
+  
+  // Show error if there was an error fetching product detail
   if (productDetailError) {
+    console.log('[ProductDetail] Showing error:', productDetailError);
     return <div className="min-h-screen flex items-center justify-center text-red-600">{productDetailError}</div>;
   }
+  
+  // Show loading if we don't have product detail yet (but are not in error state)
+  if (!productDetail && actualProductId && basalamToken) {
+    console.log('[ProductDetail] Showing loading because productDetail is not available yet');
+    return <LoadingSpinner />;
+  }
+  
+  // If no productDetail and no loading/error, it means no valid product ID
   if (!productDetail) {
+    console.log('[ProductDetail] No productDetail available, redirecting...');
     return <LoadingSpinner />;
   }
 
@@ -507,7 +566,7 @@ useExpensiveManagement({
                     </p>
                   </div>
                   <button
-                    onClick={() => window.open(`https://vendor.basalam.com/edit-product/${selectedProduct.id}`, '_blank')}
+                    onClick={() => window.open(`https://vendor.basalam.com/edit-product/${productDetail.id}`, '_blank')}
                     className="py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 ease-in-out shadow-sm flex items-center justify-center gap-2"
                   >
                     <Wrench size={18} />
@@ -547,7 +606,7 @@ useExpensiveManagement({
           hasMore={hasMoreCompetitors}
           isLoadingMore={isLoadingMoreCompetitors}
           onLoadMore={loadMoreCompetitors}
-          selectedProductPrice={selectedProduct.price}
+          selectedProductPrice={productDetail.price}
           deletingCompetitorIds={deletingCompetitorIds}
           locallyRemovedCompetitorIds={locallyRemovedCompetitorIds} // ✅ pass optimistic state
           handleDeleteCompetitor={handleDeleteCompetitor}

@@ -10,7 +10,11 @@ import { ApiError } from "../services/apiError";
 const ExpensiveProductsPage = () => {
   const [isReevaluateModalOpen, setIsReevaluateModalOpen] = useState(false);
   const [pendingReevaluation, setPendingReevaluation] = useState(false);
-  const { navigate, authorizedFetch, basalamToken, setSelectedProduct, setGlobalLoading, setBasalamToken } = useContext(AppContext);
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('ExpensiveProductsPage must be used within AppContext.Provider');
+  }
+  const { navigate, authorizedFetch, basalamToken, setSelectedProduct, setGlobalLoading, setBasalamToken } = context;
   
   // Use the custom hook for fetching expensive products
   const { products, isLoading, error } = useExpensiveProducts(
@@ -24,7 +28,7 @@ const ExpensiveProductsPage = () => {
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
-    navigate('product-detail', { from: 'not-best-price' });
+    navigate('product-detail', { productId: product.id, from: 'not-best-price' });
   };
 
   const handleBasalamPageClick = (e: React.MouseEvent<HTMLButtonElement>, url: string) => {

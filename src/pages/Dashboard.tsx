@@ -3,7 +3,11 @@ import { AppContext } from "../context/AppContext";
 import { Package, AlertCircle } from "lucide-react";
 
 const Dashboard = () => {
-  const { navigate, setBasalamToken } = useContext(AppContext);
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('Dashboard must be used within AppContext.Provider');
+  }
+  const { navigate, setBasalamToken } = context;
 
   return (
     <div className="p-4 max-w-md mx-auto h-screen flex flex-col justify-center">

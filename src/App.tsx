@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, createContext, useRef, useCallback, useMemo } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
 import LoginPage from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
 import ExpensiveProductsPage from "./pages/ExpensiveProductsPage";
@@ -17,25 +18,22 @@ import { MyProductCard } from "./components/MyProductCard";
 import { formatPrice } from "./lib/format";
 
 //context
-import { AppContext } from "./context/AppContext";
+import { AppContext, AppContextType } from "./context/AppContext";
 
 
+// ProtectedRoute component for authentication
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const basalamToken = localStorage.getItem('authToken');
+  return basalamToken ? <>{children}</> : <Navigate to="/login" replace />;
+};
 
-
-// Loosely typed app context for speed; can be refined later
-// export const AppContext = createContext<any>(null);
-
-
-
-const App = () => {
+// App Content component that uses React Router hooks
+const AppContent: React.FC = () => {
   const [basalamToken, setBasalamToken] = useState<string>(() => localStorage.getItem('authToken') || '');
-  const [currentPage, setCurrentPage] = useState<'login' | 'dashboard' | 'my-products' | 'product-detail' | 'not-best-price'>(
-    () => (localStorage.getItem('authToken') ? 'dashboard' : 'login')
-  );
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [globalLoading, setGlobalLoading] = useState<boolean>(false);
   const [lastNavigation, setLastNavigation] = useState<any>(null);
-
+  const reactRouterNavigate = useNavigate();
 
   useEffect(() => {
     if (basalamToken) {
@@ -45,43 +43,27 @@ const App = () => {
     }
   }, [basalamToken]);
 
-  const navigate = useCallback((page: typeof currentPage, state?: any) => {
-    setCurrentPage(page);
-    setLastNavigation(state || null);
-    if (page === 'my-products') {
-      setSelectedProduct(null);
-    }
-  }, []);
+  // Custom navigate function that maps old page names to new paths
+  const navigate = useCallback((path: string, options?: { productId?: string; from?: string }) => {
+    const pathMap: Record<string, string> = {
+      'login': '/login',
+      'dashboard': '/',
+      'my-products': '/my-products',
+      'product-detail': options?.productId ? `/product/${options.productId}` : '/product/current',
+      'not-best-price': '/expensive-products'
+    };
 
+    const routePath = pathMap[path] || path;
+    setLastNavigation(options || null);
+    reactRouterNavigate(routePath);
+  }, [reactRouterNavigate]);
+
+  // Redirect to dashboard if logged in and on login page
   useEffect(() => {
-    if (!basalamToken && currentPage !== 'login') {
-      setCurrentPage('login');
+    if (basalamToken && window.location.pathname === '/login') {
+      reactRouterNavigate('/');
     }
-  }, [basalamToken, currentPage]);
-
-  // After a successful login (token set), move away from login page automatically
-  useEffect(() => {
-    if (basalamToken && currentPage === 'login') {
-      setCurrentPage('dashboard');
-    }
-  }, [basalamToken, currentPage]);
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'login':
-        return <LoginPage />;
-      case 'dashboard':
-        return <Dashboard />;
-      case 'my-products':
-        return <MyProducts />;
-      case 'product-detail':
-        return <ProductDetail />;
-      case 'not-best-price':
-  return <ExpensiveProductsPage />;
-      default:
-        return <Dashboard />;
-    }
-  };
+  }, [basalamToken, reactRouterNavigate]);
 
   const authorizedFetch = useCallback((input: RequestInfo | URL, init: RequestInit = {}) => {
     const headers = new Headers(init.headers || {});
@@ -89,7 +71,7 @@ const App = () => {
     return fetch(input, { ...init, headers });
   }, [basalamToken]);
 
-  const contextValue = useMemo(() => ({
+  const contextValue: AppContextType = useMemo(() => ({
     navigate,
     selectedProduct,
     setSelectedProduct,
@@ -103,10 +85,47 @@ const App = () => {
   return (
     <AppContext.Provider value={contextValue}>
       <div className="font-['Inter'] antialiased bg-gray-50 text-gray-900 min-h-screen">
-        {renderPage()}
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/my-products" element={
+            <ProtectedRoute>
+              <MyProducts />
+            </ProtectedRoute>
+          } />
+          <Route path="/product/:id" element={
+            <ProtectedRoute>
+              <ProductDetail />
+            </ProtectedRoute>
+          } />
+          <Route path="/expensive-products" element={
+            <ProtectedRoute>
+              <ExpensiveProductsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
         <GlobalLoadingOverlay isLoading={globalLoading} />
       </div>
     </AppContext.Provider>
+  );
+};
+
+
+// Loosely typed app context for speed; can be refined later
+// export const AppContext = createContext<any>(null);
+
+
+
+const App = () => {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 };
 

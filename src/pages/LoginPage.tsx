@@ -3,7 +3,11 @@ import { Eye, EyeOff } from "lucide-react";
 import { AppContext } from "../context/AppContext"; // for now, until we move AppContext out
 
 const LoginPage: React.FC = () => {
-  const { setBasalamToken, navigate, setGlobalLoading } = useContext(AppContext);
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('LoginPage must be used within AppContext.Provider');
+  }
+  const { setBasalamToken, navigate, setGlobalLoading } = context;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
