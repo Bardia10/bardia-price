@@ -36,8 +36,8 @@ const SetPassword: React.FC = () => {
       return;
     }
 
-    if (password.length < 6) {
-      setError('رمز عبور باید حداقل ۶ کاراکتر باشد');
+    if (password.length < 4) {
+      setError('رمز عبور باید حداقل ۴ کاراکتر باشد');
       return;
     }
 

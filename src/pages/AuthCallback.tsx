@@ -49,13 +49,13 @@ const AuthCallback: React.FC = () => {
           throw new Error('Invalid token response from server');
         }
 
-        // Check if user needs to set password based on API response
-        if (ssoFlow === 'signup' && !tokenResponse['has-password']) {
-          // Signup flow and user needs to set password: store as temp token
-          console.log('[AuthCallback] Signup flow - user needs to set password');
+        // Check if user needs to set password based on API response (same for both login and signup)
+        if (!tokenResponse['has-password']) {
+          // User needs to set password: store as temp token
+          console.log('[AuthCallback] User needs to set password - redirecting to set password page');
           setTempToken(tokenResponse.token);
-            // Store JWT for later login after password set
-            sessionStorage.setItem('pendingJwt', tokenResponse.token);
+          // Store JWT for later login after password set
+          sessionStorage.setItem('pendingJwt', tokenResponse.token);
           setStatus('success');
           
           setTimeout(() => {
@@ -63,7 +63,7 @@ const AuthCallback: React.FC = () => {
           }, 1500);
           
         } else {
-          // Login flow OR signup with existing user who has password: log them in
+          // User has password: log them in directly
           console.log('[AuthCallback] User has password - logging in directly');
           setBasalamToken(tokenResponse.token);
           localStorage.setItem('authToken', tokenResponse.token);
@@ -77,9 +77,7 @@ const AuthCallback: React.FC = () => {
           setTimeout(() => {
             navigate('/', { replace: true });
           }, 1500);
-        }
-
-      } catch (err) {
+        }      } catch (err) {
         console.error('[AuthCallback] Error during OAuth callback:', err);
         setError(err instanceof Error ? err.message : 'خطای نامشخص رخ داده است');
         setStatus('error');
