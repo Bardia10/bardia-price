@@ -10,6 +10,11 @@ export interface AppContextType {
   authorizedFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
   setGlobalLoading: (loading: boolean) => void;
   lastNavigation: any;
+  // SSO-related state
+  tempToken: string;
+  setTempToken: (token: string) => void;
+  ssoFlow: 'login' | 'signup' | null;
+  setSsoFlow: (flow: 'login' | 'signup' | null) => void;
 }
 
 export const AppContext = createContext<AppContextType | null>(null);

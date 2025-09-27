@@ -1,19 +1,43 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { AppContext } from "../context/AppContext"; // for now, until we move AppContext out
+import { AppContext } from "../context/AppContext";
+import { getOAuthStartUrl } from "../services/ssoService";
 
 const LoginPage: React.FC = () => {
   const context = useContext(AppContext);
   if (!context) {
     throw new Error('LoginPage must be used within AppContext.Provider');
   }
-  const { setBasalamToken, navigate, setGlobalLoading } = context;
+  const { setBasalamToken, navigate, setGlobalLoading, setSsoFlow } = context;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
+
+  // Check for pending credentials from successful signup
+  useEffect(() => {
+    const pendingCredentials = sessionStorage.getItem('pendingCredentials');
+    if (pendingCredentials) {
+      try {
+        const credentials = JSON.parse(pendingCredentials);
+        setUsername(credentials.username || '');
+        setPassword(credentials.password || '');
+        sessionStorage.removeItem('pendingCredentials');
+        
+        // Show a helpful message
+        if (credentials.username) {
+          setError(`خوش آمدید! اطلاعات ورود شما آماده است. نام کاربری: ${credentials.username}`);
+          setTimeout(() => setError(null), 5000);
+        }
+      } catch (err) {
+        console.error('Error parsing pending credentials:', err);
+        sessionStorage.removeItem('pendingCredentials');
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +81,23 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const handleSsoLogin = async () => {
+    setSsoLoading(true);
+    setError(null);
+    
+    try {
+      console.log('[LoginPage] Starting SSO login flow...');
+      setSsoFlow('login');
+      const oauthUrl = await getOAuthStartUrl();
+      console.log('[LoginPage] Redirecting to OAuth URL:', oauthUrl);
+      window.location.href = oauthUrl;
+    } catch (err) {
+      console.error('[LoginPage] SSO login error:', err);
+      setError(err instanceof Error ? err.message : 'خطا در ورود با باسلام');
+      setSsoLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
@@ -92,7 +133,11 @@ const LoginPage: React.FC = () => {
               </button>
             </div>
           </div>
-          {error && <div className="text-red-600 text-sm">{error}</div>}
+          {error && (
+            <div className={`text-sm ${error.includes('خوش آمدید') ? 'text-green-600' : 'text-red-600'}`}>
+              {error}
+            </div>
+          )}
           <button
             type="submit"
             disabled={loading}
@@ -102,14 +147,38 @@ const LoginPage: React.FC = () => {
           </button>
         </form>
 
+        {/* SSO Login */}
+        <div className="mt-4">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">یا</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleSsoLogin}
+            disabled={ssoLoading}
+            className="mt-4 w-full py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-60 flex items-center justify-center"
+          >
+            {ssoLoading ? "در حال اتصال..." : "ورود با باسلام"}
+          </button>
+        </div>
+
         {/* Registration section */}
         <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
           <p className="text-sm text-blue-800 text-center mb-2">
-            برای ثبت نام یا دریافت رمز عبور به آیدی تلگرام زیر پیام دهید:
+            اکانت ندارید؟
           </p>
-          <p className="text-sm font-medium text-blue-900 text-center">
-            @BardiaFar
-          </p>
+          <button
+            type="button"
+            onClick={() => navigate('signup')}
+            className="w-full py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition"
+          >
+            ثبت‌نام کنید
+          </button>
         </div>
       </div>
     </div>

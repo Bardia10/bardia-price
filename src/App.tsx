@@ -5,6 +5,9 @@ import Dashboard from "./pages/Dashboard";
 import ExpensiveProductsPage from "./pages/ExpensiveProductsPage";
 import MyProducts from "./pages/MyProducts";
 import ProductDetail from "./pages/ProductDetail";
+import SignupPage from "./pages/SignupPage";
+import SetPassword from "./pages/SetPassword";
+import AuthCallback from "./pages/AuthCallback";
 
 
 // components
@@ -33,6 +36,11 @@ const AppContent: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [globalLoading, setGlobalLoading] = useState<boolean>(false);
   const [lastNavigation, setLastNavigation] = useState<any>(null);
+  const [tempToken, setTempToken] = useState<string>(() => localStorage.getItem('tempToken') || '');
+  const [ssoFlow, setSsoFlow] = useState<'login' | 'signup' | null>(() => {
+    const stored = sessionStorage.getItem('ssoFlow');
+    return stored as 'login' | 'signup' | null;
+  });
   const reactRouterNavigate = useNavigate();
 
   useEffect(() => {
@@ -43,10 +51,29 @@ const AppContent: React.FC = () => {
     }
   }, [basalamToken]);
 
+  useEffect(() => {
+    if (tempToken) {
+      localStorage.setItem('tempToken', tempToken);
+    } else {
+      localStorage.removeItem('tempToken');
+    }
+  }, [tempToken]);
+
+  useEffect(() => {
+    if (ssoFlow) {
+      sessionStorage.setItem('ssoFlow', ssoFlow);
+    } else {
+      sessionStorage.removeItem('ssoFlow');
+    }
+  }, [ssoFlow]);
+
   // Custom navigate function that maps old page names to new paths
   const navigate = useCallback((path: string, options?: { productId?: string; from?: string }) => {
     const pathMap: Record<string, string> = {
       'login': '/login',
+      'signup': '/signup',
+      'set-password': '/set-password',
+      'auth-callback': '/auth/callback',
       'dashboard': '/',
       'my-products': '/my-products',
       'product-detail': options?.productId ? `/product/${options.productId}` : '/product/current',
@@ -58,9 +85,10 @@ const AppContent: React.FC = () => {
     reactRouterNavigate(routePath);
   }, [reactRouterNavigate]);
 
-  // Redirect to dashboard if logged in and on login page
+  // Redirect to dashboard if logged in and on auth pages
   useEffect(() => {
-    if (basalamToken && window.location.pathname === '/login') {
+    const authPages = ['/login', '/signup', '/set-password', '/auth/callback'];
+    if (basalamToken && authPages.includes(window.location.pathname)) {
       reactRouterNavigate('/');
     }
   }, [basalamToken, reactRouterNavigate]);
@@ -80,13 +108,20 @@ const AppContent: React.FC = () => {
     authorizedFetch,
     setGlobalLoading,
     lastNavigation,
-  }), [navigate, selectedProduct, basalamToken, authorizedFetch, lastNavigation]);
+    tempToken,
+    setTempToken,
+    ssoFlow,
+    setSsoFlow,
+  }), [navigate, selectedProduct, basalamToken, authorizedFetch, lastNavigation, tempToken, ssoFlow]);
 
   return (
     <AppContext.Provider value={contextValue}>
       <div className="font-['Inter'] antialiased bg-gray-50 text-gray-900 min-h-screen">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/set-password" element={<SetPassword />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/" element={
             <ProtectedRoute>
               <Dashboard />
