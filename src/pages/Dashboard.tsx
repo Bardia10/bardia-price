@@ -7,7 +7,7 @@ const Dashboard = () => {
   if (!context) {
     throw new Error('Dashboard must be used within AppContext.Provider');
   }
-  const { navigate, setBasalamToken } = context;
+  const { navigate, setBasalamToken, clearMyProductsState } = context;
 
   return (
     <div className="p-4 max-w-md mx-auto h-screen flex flex-col justify-center">
@@ -25,7 +25,10 @@ const Dashboard = () => {
           می‌توانید برای هر محصول رقیب اضافه کنید تا قیمت‌ها را با هم مقایسه کنید.
         </p>
         <button
-          onClick={() => navigate("my-products")}
+          onClick={() => {
+            clearMyProductsState();
+            navigate("my-products");
+          }}
           className="w-full flex items-center justify-center p-4 bg-emerald-600 text-white rounded-xl shadow-md hover:bg-emerald-700 transition duration-300 ease-in-out transform hover:scale-105"
         >
           <Package className="mr-3" />

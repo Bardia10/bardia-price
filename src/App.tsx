@@ -41,6 +41,32 @@ const AppContent: React.FC = () => {
     const stored = sessionStorage.getItem('ssoFlow');
     return stored as 'login' | 'signup' | null;
   });
+  
+  // My Products state preservation
+  const [myProductsState, setMyProductsStateInternal] = useState({
+    products: [] as any[],
+    currentPage: 1,
+    searchTerm: '',
+    hasMorePages: true,
+    scrollPosition: 0,
+    isInitialized: false,
+  });
+  
+  const setMyProductsState = useCallback((updates: Partial<typeof myProductsState>) => {
+    setMyProductsStateInternal(prev => ({ ...prev, ...updates }));
+  }, []);
+  
+  const clearMyProductsState = useCallback(() => {
+    setMyProductsStateInternal({
+      products: [] as any[],
+      currentPage: 1,
+      searchTerm: '',
+      hasMorePages: true,
+      scrollPosition: 0,
+      isInitialized: false,
+    });
+  }, []);
+  
   const reactRouterNavigate = useNavigate();
 
   useEffect(() => {
@@ -112,7 +138,10 @@ const AppContent: React.FC = () => {
     setTempToken,
     ssoFlow,
     setSsoFlow,
-  }), [navigate, selectedProduct, basalamToken, authorizedFetch, lastNavigation, tempToken, ssoFlow]);
+    myProductsState,
+    setMyProductsState,
+    clearMyProductsState,
+  }), [navigate, selectedProduct, basalamToken, authorizedFetch, lastNavigation, tempToken, ssoFlow, myProductsState, setMyProductsState, clearMyProductsState]);
 
   return (
     <AppContext.Provider value={contextValue}>

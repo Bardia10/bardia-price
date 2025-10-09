@@ -15,6 +15,17 @@ export interface AppContextType {
   setTempToken: (token: string) => void;
   ssoFlow: 'login' | 'signup' | null;
   setSsoFlow: (flow: 'login' | 'signup' | null) => void;
+  // My Products state preservation
+  myProductsState: {
+    products: any[];
+    currentPage: number;
+    searchTerm: string;
+    hasMorePages: boolean;
+    scrollPosition: number;
+    isInitialized: boolean;
+  };
+  setMyProductsState: (state: Partial<AppContextType['myProductsState']>) => void;
+  clearMyProductsState: () => void;
 }
 
 export const AppContext = createContext<AppContextType | null>(null);

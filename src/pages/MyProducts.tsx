@@ -12,14 +12,26 @@ const MyProducts = () => {
   if (!context) {
     throw new Error('MyProducts must be used within AppContext.Provider');
   }
-  const { navigate, setSelectedProduct, authorizedFetch, basalamToken, setGlobalLoading, setBasalamToken } = context;
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMorePages, setHasMorePages] = useState(true);
+  const { 
+    navigate, 
+    setSelectedProduct, 
+    authorizedFetch, 
+    basalamToken, 
+    setGlobalLoading, 
+    setBasalamToken,
+    myProductsState,
+    setMyProductsState,
+    clearMyProductsState
+  } = context;
+  
+  // Use state from context
+  const { products: myProducts, currentPage, searchTerm, hasMorePages, scrollPosition, isInitialized } = myProductsState;
+  
+  // Local state for input and loading states
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
   const [isLoadingApi, setIsLoadingApi] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [myProducts, setMyProducts] = useState<any[]>([]);
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
   // Map API product shape to internal Product type
@@ -92,14 +104,21 @@ const MyProducts = () => {
       
       if (isLoadMore) {
         // Append to existing products
-        setMyProducts(prev => [...prev, ...products]);
+        setMyProductsState({ 
+          products: [...myProducts, ...products],
+          currentPage: page,
+          hasMorePages: products.length === 24
+        });
       } else {
         // Replace products (new search or first load)
-        setMyProducts(products);
+        setMyProductsState({ 
+          products,
+          currentPage: page,
+          searchTerm: query,
+          hasMorePages: products.length === 24,
+          isInitialized: true
+        });
       }
-      
-      // Check if there are more pages (assuming if we get less than 50 products, no more pages)
-      setHasMorePages(products.length === 24);
       
     } catch (e: any) {
       setApiError(e?.message || 'خطای نامشخص');
@@ -111,28 +130,47 @@ const MyProducts = () => {
         setGlobalLoading(false);
       }
     }
-  }, [authorizedFetch, basalamToken, setGlobalLoading, mapApiProduct]);
+  }, [authorizedFetch, basalamToken, setGlobalLoading, myProducts, setMyProductsState, apiUrl, setBasalamToken, navigate]);
 
-  // Initial fetch on page load
+  // Initial fetch on page load or when coming from dashboard
   const fetchedOnceRef = useRef(false);
   useEffect(() => {
-    if (!fetchedOnceRef.current) {
+    // Only fetch if not initialized or coming from dashboard
+    if (!isInitialized && !fetchedOnceRef.current) {
       fetchedOnceRef.current = true;
       fetchProducts(1, '');
-      setCurrentPage(1);
     }
-  }, [fetchProducts]);
+  }, [fetchProducts, isInitialized]);
+
+  // Restore scroll position when coming back to the page
+  useEffect(() => {
+    if (isInitialized && scrollPosition > 0) {
+      // Use setTimeout to ensure the DOM is ready and products are rendered
+      const timer = setTimeout(() => {
+        window.scrollTo(0, scrollPosition);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialized, scrollPosition, myProducts.length]);
+
+  // Save scroll position when user scrolls
+  useEffect(() => {
+    const handleScroll = () => {
+      setMyProductsState({ scrollPosition: window.scrollY });
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [setMyProductsState]);
 
   // Search function - only called when search button is clicked
   const handleSearch = useCallback(() => {
-    setCurrentPage(1);
-    fetchProducts(1, searchTerm);
-  }, [searchTerm, fetchProducts]);
+    fetchProducts(1, localSearchTerm);
+  }, [localSearchTerm, fetchProducts]);
 
   // Clear search and show all products
   const handleClearSearch = useCallback(() => {
-    setSearchTerm('');
-    setCurrentPage(1);
+    setLocalSearchTerm('');
     fetchProducts(1, '');
   }, [fetchProducts]);
 
@@ -140,7 +178,6 @@ const MyProducts = () => {
   const loadMoreProducts = useCallback(() => {
     if (!isLoadingMore && hasMorePages) {
       const nextPage = currentPage + 1;
-      setCurrentPage(nextPage);
       fetchProducts(nextPage, searchTerm, true);
     }
   }, [currentPage, searchTerm, fetchProducts, isLoadingMore, hasMorePages]);
@@ -157,7 +194,11 @@ const MyProducts = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header title="محصولات من" onBack={() => navigate('dashboard')} />
+      <Header title="محصولات من" onBack={() => {
+        // Clear state when going back to dashboard
+        clearMyProductsState();
+        navigate('dashboard');
+      }} />
       <div className="flex justify-center mb-4 mt-6">
         <p className="text-lg text-emerald-700 leading-relaxed">
           روی محصول مورد نظر کلیک کنین تا با رقیب ها مقایسش کنین
@@ -172,8 +213,8 @@ const MyProducts = () => {
               type="text"
               placeholder=" جستجوی محصولات..."
               className="w-full p-3 pl-10 pr-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={localSearchTerm}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
             <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -185,7 +226,7 @@ const MyProducts = () => {
           >
             جستجو
           </button>
-          {searchTerm && (
+          {localSearchTerm && (
             <button
               onClick={handleClearSearch}
               disabled={isLoadingApi}
