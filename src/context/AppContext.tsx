@@ -26,6 +26,14 @@ export interface AppContextType {
   };
   setMyProductsState: (state: Partial<AppContextType['myProductsState']>) => void;
   clearMyProductsState: () => void;
+  // Expensive Products state preservation
+  expensiveProductsState: {
+    products: any[];
+    scrollPosition: number;
+    isInitialized: boolean;
+  };
+  setExpensiveProductsState: (state: Partial<AppContextType['expensiveProductsState']>) => void;
+  clearExpensiveProductsState: () => void;
 }
 
 export const AppContext = createContext<AppContextType | null>(null);

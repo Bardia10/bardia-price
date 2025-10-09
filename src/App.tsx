@@ -66,6 +66,25 @@ const AppContent: React.FC = () => {
       isInitialized: false,
     });
   }, []);
+
+  // Expensive Products state preservation
+  const [expensiveProductsState, setExpensiveProductsStateInternal] = useState({
+    products: [] as any[],
+    scrollPosition: 0,
+    isInitialized: false,
+  });
+  
+  const setExpensiveProductsState = useCallback((updates: Partial<typeof expensiveProductsState>) => {
+    setExpensiveProductsStateInternal(prev => ({ ...prev, ...updates }));
+  }, []);
+  
+  const clearExpensiveProductsState = useCallback(() => {
+    setExpensiveProductsStateInternal({
+      products: [] as any[],
+      scrollPosition: 0,
+      isInitialized: false,
+    });
+  }, []);
   
   const reactRouterNavigate = useNavigate();
 
@@ -141,7 +160,10 @@ const AppContent: React.FC = () => {
     myProductsState,
     setMyProductsState,
     clearMyProductsState,
-  }), [navigate, selectedProduct, basalamToken, authorizedFetch, lastNavigation, tempToken, ssoFlow, myProductsState, setMyProductsState, clearMyProductsState]);
+    expensiveProductsState,
+    setExpensiveProductsState,
+    clearExpensiveProductsState,
+  }), [navigate, selectedProduct, basalamToken, authorizedFetch, lastNavigation, tempToken, ssoFlow, myProductsState, setMyProductsState, clearMyProductsState, expensiveProductsState, setExpensiveProductsState, clearExpensiveProductsState]);
 
   return (
     <AppContext.Provider value={contextValue}>

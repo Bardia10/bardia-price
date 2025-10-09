@@ -7,7 +7,7 @@ const Dashboard = () => {
   if (!context) {
     throw new Error('Dashboard must be used within AppContext.Provider');
   }
-  const { navigate, setBasalamToken, clearMyProductsState } = context;
+  const { navigate, setBasalamToken, clearMyProductsState, clearExpensiveProductsState } = context;
 
   return (
     <div className="p-4 max-w-md mx-auto h-screen flex flex-col justify-center">
@@ -44,7 +44,10 @@ const Dashboard = () => {
           می‌توانید قیمت این محصولات را پایین‌تر بیاورید تا مشتری بیشتری جذب کنید.
         </p>
         <button
-          onClick={() => navigate("not-best-price")}
+          onClick={() => {
+            clearExpensiveProductsState();
+            navigate("not-best-price");
+          }}
           className="w-full flex items-center justify-center p-4 bg-yellow-500 text-white rounded-xl shadow-md hover:bg-yellow-600 transition duration-300 ease-in-out transform hover:scale-105"
         >
           <AlertCircle className="mr-3" />
