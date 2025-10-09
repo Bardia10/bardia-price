@@ -52,7 +52,14 @@ const AppContent: React.FC = () => {
     isInitialized: false,
   });
   
-  const setMyProductsState = useCallback((updates: Partial<typeof myProductsState>) => {
+  const setMyProductsState = useCallback((updates: Partial<{
+    products: any[];
+    currentPage: number;
+    searchTerm: string;
+    hasMorePages: boolean;
+    scrollPosition: number;
+    isInitialized: boolean;
+  }>) => {
     setMyProductsStateInternal(prev => ({ ...prev, ...updates }));
   }, []);
   
@@ -74,7 +81,11 @@ const AppContent: React.FC = () => {
     isInitialized: false,
   });
   
-  const setExpensiveProductsState = useCallback((updates: Partial<typeof expensiveProductsState>) => {
+  const setExpensiveProductsState = useCallback((updates: Partial<{
+    products: any[];
+    scrollPosition: number;
+    isInitialized: boolean;
+  }>) => {
     setExpensiveProductsStateInternal(prev => ({ ...prev, ...updates }));
   }, []);
   

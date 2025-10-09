@@ -130,7 +130,7 @@ const MyProducts = () => {
         setGlobalLoading(false);
       }
     }
-  }, [authorizedFetch, basalamToken, setGlobalLoading, myProducts, setMyProductsState, apiUrl, setBasalamToken, navigate]);
+  }, [authorizedFetch, basalamToken, setGlobalLoading, myProducts, apiUrl, setBasalamToken, navigate]); // Removed setMyProductsState from dependencies
 
   // Initial fetch on page load or when coming from dashboard
   const fetchedOnceRef = useRef(false);
@@ -161,7 +161,7 @@ const MyProducts = () => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [setMyProductsState]);
+  }, []); // Empty dependency array since setMyProductsState should be stable
 
   // Search function - only called when search button is clicked
   const handleSearch = useCallback(() => {

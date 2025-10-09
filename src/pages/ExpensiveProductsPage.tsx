@@ -32,6 +32,14 @@ const ExpensiveProductsPage = () => {
   // Use state from context
   const { products, scrollPosition, isInitialized } = expensiveProductsState;
 
+  // Debug: Log component mount/unmount
+  useEffect(() => {
+    console.log("[ExpensiveProductsPage] Component mounted");
+    return () => {
+      console.log("[ExpensiveProductsPage] Component unmounted");
+    };
+  }, []);
+
   // Map API product shape to internal Product type
   const mapExpensiveProduct = (p: any) => {
     const id = String(p?.id ?? '');
@@ -94,14 +102,17 @@ const ExpensiveProductsPage = () => {
       setIsLoading(false);
       setGlobalLoading(false);
     }
-  }, [basalamToken, authorizedFetch, setExpensiveProductsState, setGlobalLoading, setBasalamToken, navigate]);
+  }, [basalamToken, authorizedFetch, setGlobalLoading, setBasalamToken, navigate]); // Removed setExpensiveProductsState from dependencies
 
   // Initial fetch on page load or when coming from dashboard
   useEffect(() => {
     // Only fetch if not initialized or coming from dashboard
     if (!isInitialized && !fetchedOnceRef.current) {
+      console.log("[ExpensiveProductsPage] Fetching products - isInitialized:", isInitialized, "fetchedOnce:", fetchedOnceRef.current);
       fetchedOnceRef.current = true;
       fetchProducts();
+    } else {
+      console.log("[ExpensiveProductsPage] Skipping fetch - isInitialized:", isInitialized, "fetchedOnce:", fetchedOnceRef.current);
     }
   }, [fetchProducts, isInitialized]);
 
@@ -124,7 +135,7 @@ const ExpensiveProductsPage = () => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [setExpensiveProductsState]);
+  }, []); // Empty dependency array since setExpensiveProductsState should be stable
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
