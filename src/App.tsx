@@ -41,6 +41,10 @@ const AppContent: React.FC = () => {
     const stored = sessionStorage.getItem('ssoFlow');
     return stored as 'login' | 'signup' | null;
   });
+
+  // Version checking state
+  const [updateAvailable, setUpdateAvailable] = useState<boolean>(false);
+  const [currentVersion, setCurrentVersion] = useState<string | null>(null);
   
   // My Products state preservation
   const [myProductsState, setMyProductsStateInternal] = useState({
@@ -123,6 +127,50 @@ const AppContent: React.FC = () => {
     }
   }, [ssoFlow]);
 
+  // Version checking - checks for new deployments every 5 minutes
+  useEffect(() => {
+    async function checkVersion() {
+      try {
+        console.log('🔍 Checking for new version...');
+        const res = await fetch("/version.json?cacheBust=" + Date.now());
+        const data = await res.json();
+        const { version } = data;
+
+        console.log('📦 Fetched version:', version);
+        console.log('💾 Stored version:', currentVersion);
+
+        if (!currentVersion) {
+          // First load - store the current version
+          console.log('✅ First load - storing version:', version);
+          setCurrentVersion(version);
+        } else if (version !== currentVersion) {
+          // New version detected
+          console.log('🚀 NEW VERSION DETECTED! Showing banner...');
+          console.log('   Old:', currentVersion);
+          console.log('   New:', version);
+          setUpdateAvailable(true);
+        } else {
+          console.log('✓ Version unchanged');
+        }
+      } catch (err) {
+        console.warn("❌ Version check failed:", err);
+      }
+    }
+
+    // Check immediately on mount
+    checkVersion();
+    
+    // Then check every 5 minutes
+    const interval = setInterval(checkVersion, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [currentVersion]);
+
+  const handleUpdate = useCallback(() => {
+    // Force a hard reload to get the latest version
+    window.location.reload();
+  }, []);
+
   // Custom navigate function that maps old page names to new paths
   const navigate = useCallback((path: string, options?: { productId?: string; from?: string }) => {
     const pathMap: Record<string, string> = {
@@ -179,6 +227,38 @@ const AppContent: React.FC = () => {
   return (
     <AppContext.Provider value={contextValue}>
       <div className="font-['Inter'] antialiased bg-gray-50 text-gray-900 min-h-screen">
+        {/* Update notification banner */}
+        {updateAvailable && (
+          <div className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 px-4 shadow-2xl border-b-4 border-green-700 animate-pulse">
+            <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3" dir="rtl">
+                <svg 
+                  className="w-8 h-8 flex-shrink-0 animate-bounce" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2.5} 
+                    d="M13 10V3L4 14h7v7l9-11h-7z" 
+                  />
+                </svg>
+                <span className="font-bold text-lg" style={{ fontFamily: 'Inter, Tahoma, sans-serif' }}>
+                  نسخه جدید منتشر شد! لطفاً برای دریافت آخرین بروزرسانی‌ها صفحه را تازه کنید.
+                </span>
+              </div>
+              <button
+                onClick={handleUpdate}
+                className="bg-white text-green-700 px-6 py-3 rounded-lg font-bold text-lg hover:bg-green-50 transition-all shadow-lg hover:shadow-xl hover:scale-105 border-2 border-green-700 animate-pulse"
+                style={{ fontFamily: 'Inter, Tahoma, sans-serif' }}
+              >
+                🔄 تازه‌سازی صفحه
+              </button>
+            </div>
+          </div>
+        )}
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
