@@ -11,7 +11,6 @@ const ExpensiveProductsPage = () => {
   const [pendingReevaluation, setPendingReevaluation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fetchedOnceRef = useRef(false);
   
   const context = useContext(AppContext);
   if (!context) {
@@ -106,15 +105,14 @@ const ExpensiveProductsPage = () => {
 
   // Initial fetch on page load or when coming from dashboard
   useEffect(() => {
-    // Only fetch if not initialized or coming from dashboard
-    if (!isInitialized && !fetchedOnceRef.current) {
-      console.log("[ExpensiveProductsPage] Fetching products - isInitialized:", isInitialized, "fetchedOnce:", fetchedOnceRef.current);
-      fetchedOnceRef.current = true;
+    // Only fetch if not initialized - this respects state preservation on back navigation
+    if (!isInitialized) {
+      console.log("[ExpensiveProductsPage] Fetching products - isInitialized:", isInitialized);
       fetchProducts();
     } else {
-      console.log("[ExpensiveProductsPage] Skipping fetch - isInitialized:", isInitialized, "fetchedOnce:", fetchedOnceRef.current);
+      console.log("[ExpensiveProductsPage] Skipping fetch - using cached data, isInitialized:", isInitialized);
     }
-  }, [fetchProducts, isInitialized]);
+  }, []); // Empty dependency array - only run on mount
 
   // Restore scroll position when coming back to the page
   useEffect(() => {

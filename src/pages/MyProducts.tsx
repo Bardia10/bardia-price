@@ -133,14 +133,12 @@ const MyProducts = () => {
   }, [authorizedFetch, basalamToken, setGlobalLoading, myProducts, apiUrl, setBasalamToken, navigate]); // Removed setMyProductsState from dependencies
 
   // Initial fetch on page load or when coming from dashboard
-  const fetchedOnceRef = useRef(false);
   useEffect(() => {
-    // Only fetch if not initialized or coming from dashboard
-    if (!isInitialized && !fetchedOnceRef.current) {
-      fetchedOnceRef.current = true;
+    // Only fetch if not initialized - this respects state preservation on back navigation
+    if (!isInitialized) {
       fetchProducts(1, '');
     }
-  }, [fetchProducts, isInitialized]);
+  }, []); // Empty dependency array - only run on mount
 
   // Restore scroll position when coming back to the page
   useEffect(() => {
