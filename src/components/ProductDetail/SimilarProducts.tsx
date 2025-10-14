@@ -1,7 +1,9 @@
-import React from "react";
-import { ExternalLink, X } from "lucide-react";
+import React, { useState } from "react";
+import { ExternalLink, X, Edit2, Search } from "lucide-react";
 import LoadingSpinner from "../LoadingSpinner";
 import { formatPrice } from "../../lib/format";
+import SearchMethodModal from "./SearchMethodModal";
+import TextSearchModal from "./TextSearchModal";
 
 interface SimilarProductsProps {
   showSimilars: boolean;
@@ -25,6 +27,10 @@ interface SimilarProductsProps {
   loadMoreSimilars: () => void;
   isLoadingMoreSimilars: boolean;
   fetchSimilarProducts: () => void;
+  fetchTextSearch: (query: string) => void;
+  searchMode: "combined" | "text";
+  textSearchQuery: string;
+  productTitle: string;
 }
 
 const SimilarProducts: React.FC<SimilarProductsProps> = ({
@@ -46,7 +52,39 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
   loadMoreSimilars,
   isLoadingMoreSimilars,
   fetchSimilarProducts,
+  fetchTextSearch,
+  searchMode,
+  textSearchQuery,
+  productTitle,
 }) => {
+  const [showSearchMethodModal, setShowSearchMethodModal] = useState(false);
+  const [showTextSearchModal, setShowTextSearchModal] = useState(false);
+
+  const handleSearchMethodSelect = (method: "text" | "image" | "combined") => {
+    console.log('[SimilarProducts] Search method selected:', method);
+    console.log('[SimilarProducts] Previous mode was:', searchMode);
+    setShowSearchMethodModal(false);
+    
+    if (method === "combined") {
+      console.log('[SimilarProducts] Switching to combined search');
+      fetchSimilarProducts();
+    } else if (method === "text") {
+      console.log('[SimilarProducts] Opening text search modal');
+      setShowTextSearchModal(true);
+    }
+    // Image search is disabled for now
+  };
+
+  const handleTextSearch = (query: string) => {
+    console.log('[SimilarProducts] Text search initiated with query:', query);
+    fetchTextSearch(query);
+  };
+
+  const handleChangeText = () => {
+    console.log('[SimilarProducts] Change text button clicked');
+    setShowTextSearchModal(true);
+  };
+
   if (!showSimilars) return null;
 
   return (
@@ -60,9 +98,42 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
 
       {hasFetchedSimilars ? (
         <>
-          {/* Instructions */}
-          <div className="flex justify-center mb-4 mt-4">
-            <p className="text-lg text-emerald-700 leading-relaxed">
+          {/* Search Mode Info & Actions */}
+          <div className="flex flex-col items-center gap-3 mb-4 mt-4 w-full">
+            {/* Current Search Mode Badge */}
+            <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-xl border border-blue-200">
+              <span className="text-sm font-medium text-blue-700">
+                {searchMode === "combined" 
+                  ? "🔍 جستجوی ترکیبی (متن + تصویر)" 
+                  : `📝 جستجوی متنی: "${textSearchQuery}"`}
+              </span>
+            </div>
+
+            {/* Change Text Button (for text mode) */}
+            {searchMode === "text" && (
+              <button
+                onClick={handleChangeText}
+                className="w-full max-w-md px-6 py-3 bg-blue-600 text-white text-base font-semibold rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+              >
+                <Edit2 size={20} />
+                تغییر متن جستجو
+              </button>
+            )}
+
+            {/* Different Search Method Button */}
+            <button
+              onClick={() => {
+                console.log('[SimilarProducts] Different Search button clicked - opening method modal');
+                setShowSearchMethodModal(true);
+              }}
+              className="w-full max-w-md px-6 py-3 bg-purple-600 text-white text-base font-semibold rounded-xl hover:bg-purple-700 transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+            >
+              <Search size={20} />
+              جستجو با روش دیگر
+            </button>
+            
+            {/* Instructions */}
+            <p className="text-lg text-emerald-700 leading-relaxed text-center">
               روی محصول مورد نظر کلیک کنین تا به رقیب ها اضافه بشه
             </p>
           </div>
@@ -210,20 +281,36 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
                 })}
               </div>
 
-              {/* Load more */}
-              {hasMoreSimilarPages && (
-                <div className="flex justify-center py-4">
+              {/* Load more and Change Method */}
+              <div className="flex flex-col items-center gap-3 py-4">
+                {hasMoreSimilarPages && (
                   <button
                     onClick={loadMoreSimilars}
                     disabled={isLoadingMoreSimilars}
-                    className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full max-w-md px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed font-semibold"
                   >
                     {isLoadingMoreSimilars
                       ? "در حال بارگذاری..."
                       : "نمایش نتایج بیشتر"}
                   </button>
-                </div>
-              )}
+                )}
+                
+                {/* Different Search Method Button (bottom) */}
+                <button
+                  onClick={() => {
+                    console.log('[SimilarProducts] Different Search button (bottom) clicked - opening method modal');
+                    setShowSearchMethodModal(true);
+                  }}
+                  className="w-full max-w-md px-6 py-3 bg-purple-600 text-white text-base font-semibold rounded-xl hover:bg-purple-700 transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                >
+                  <Search size={20} />
+                  جستجو با روش دیگر
+                </button>
+                
+                <p className="text-sm text-gray-500 text-center mt-2">
+                  نتایج مناسب نبود؟ روش جستجو را تغییر دهید
+                </p>
+              </div>
             </>
           ) : (
             <p className="text-gray-500 text-center py-4">
@@ -234,7 +321,7 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
       ) : (
         <div className="flex justify-center py-4">
           <button
-            onClick={fetchSimilarProducts}
+            onClick={() => setShowSearchMethodModal(true)}
             disabled={isLoadingSearch}
             className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
@@ -242,6 +329,21 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
           </button>
         </div>
       )}
+
+      {/* Search Method Modal */}
+      <SearchMethodModal
+        isOpen={showSearchMethodModal}
+        onClose={() => setShowSearchMethodModal(false)}
+        onSelectMethod={handleSearchMethodSelect}
+      />
+
+      {/* Text Search Modal */}
+      <TextSearchModal
+        isOpen={showTextSearchModal}
+        onClose={() => setShowTextSearchModal(false)}
+        onSearch={handleTextSearch}
+        initialText={searchMode === "text" ? textSearchQuery : productTitle}
+      />
     </div>
   );
 };

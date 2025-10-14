@@ -243,8 +243,11 @@ const ProductDetail = () => {
   hasFetchedSimilars,
   searchError,
   fetchSimilarProducts,
+  fetchTextSearch,
   loadMoreSimilars,
-  setSearchResults
+  setSearchResults,
+  searchMode,
+  textSearchQuery,
 } = useSimilars(
   productDetail, // Use productDetail instead of selectedProduct
   basalamToken,
@@ -594,6 +597,10 @@ useExpensiveManagement({
           loadMoreSimilars={loadMoreSimilars}
           isLoadingMoreSimilars={isLoadingMoreSimilars}
           fetchSimilarProducts={fetchSimilarProducts}
+          fetchTextSearch={fetchTextSearch}
+          searchMode={searchMode}
+          textSearchQuery={textSearchQuery}
+          productTitle={productDetail.title}
         />
 
         {/* Competitors Modal */}

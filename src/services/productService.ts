@@ -79,6 +79,30 @@ export async function searchSimilarProducts(
   };
 }
 
+/** Text-based search: /text-search endpoint */
+export async function searchByText(
+  authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
+  query: string,
+  productId: number | string,
+  page: number = 1
+) {
+  const encodedQuery = encodeURIComponent(query.trim());
+  const encodedId = encodeURIComponent(String(productId));
+  const url = apiUrl(`/text-search?q=${encodedQuery}&product_id=${encodedId}&page=${page}`);
+
+  const res = await authorizedFetch(url);
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    throw new ApiError(res.status, (data && (data.message || data.error)) || "خطا در جستجوی متنی", data);
+  }
+
+  return {
+    products: Array.isArray(data?.products) ? data.products : [],
+    page: typeof data?.page === "number" ? data.page : page,
+  };
+}
+
 // export async function addCompetitor(
 //   authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
 //   selfProductId: number | string,
