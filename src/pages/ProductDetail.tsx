@@ -275,6 +275,8 @@ const {
   authorizedFetch,
   productDetail?.id, // ✅ safe access
   productDetail?.price || 0, // Pass product price for comparison
+  setBasalamToken,
+  navigate,
   refreshTrigger
 );
 
@@ -289,6 +291,8 @@ const {
 } = useCompetitorsV2(
   authorizedFetch,
   productDetail?.id,
+  setBasalamToken,
+  navigate,
   refreshTrigger
 );
 

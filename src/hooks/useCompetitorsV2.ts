@@ -25,6 +25,8 @@ interface UseCompetitorsV2Result {
 export function useCompetitorsV2(
   authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
   productId: number | string | null,
+  setBasalamToken: (token: string) => void,
+  navigate: (path: string) => void,
   refreshTrigger?: number
 ): UseCompetitorsV2Result {
   const [competitors, setCompetitors] = useState<CompetitorV2[]>([]);
@@ -90,6 +92,10 @@ export function useCompetitorsV2(
       
       if (err instanceof ApiError) {
         setError(err.message);
+        if (err.status === 401) {
+          setBasalamToken('');
+          navigate('/login');
+        }
       } else {
         setError("خطا در دریافت رقبا");
       }

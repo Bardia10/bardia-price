@@ -29,6 +29,8 @@ export function useCompetitorsOverview(
   authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
   productId: number | string,
   productPrice: number,
+  setBasalamToken: (token: string) => void,
+  navigate: (path: string) => void,
   refreshTrigger?: number
 ): UseCompetitorsResult {
   const [isLoadingConfirmedCompetitors, setIsLoading] = useState(true);
@@ -108,31 +110,32 @@ export function useCompetitorsOverview(
               avgBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
             }
           }
+        } else {
+          lowestBadgeText = 'قیمت شما عالی است';
+          lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
+          avgBadgeText = 'قیمت شما عالی است';
+          avgBadgeClass = 'bg-green-50 text-green-700 border-green-200';
         }
-
+        
         setLowestBadgeText(lowestBadgeText);
         setLowestBadgeClass(lowestBadgeClass);
         setAvgBadgeText(avgBadgeText);
         setAvgBadgeClass(avgBadgeClass);
 
-        console.log("[useCompetitorsOverview] State updated:", {
-          competitorsCount: data.competitorsCount,
-          averagePrice: data.averagePrice,
-          minPrice: data.minPrice
-        });
       } catch (err) {
-        if (!active) return;
-        console.error("[useCompetitorsOverview] Error fetching competitors overview:", err);
-
+        console.error("[useCompetitorsOverview] Error fetching overview:", err);
         if (err instanceof ApiError) {
           setError(err.message);
+          if (err.status === 401) {
+            setBasalamToken('');
+            navigate('/login');
+          }
         } else {
-          setError("خطا در دریافت رقبا");
+          setError("خطا در دریافت خلاصه رقبا");
         }
       } finally {
         if (active) {
           setIsLoading(false);
-          console.log("[useCompetitorsOverview] Loading finished");
         }
       }
     }
@@ -141,9 +144,9 @@ export function useCompetitorsOverview(
 
     return () => {
       active = false;
-      console.log("[useCompetitorsOverview] Cleanup — request cancelled");
+      console.log("[useCompetitorsOverview] Cleanup function run");
     };
-  }, [authorizedFetch, productId, productPrice, refreshTrigger]);
+  }, [productId, productPrice, authorizedFetch, refreshTrigger]);
 
   return {
     isLoadingConfirmedCompetitors,
