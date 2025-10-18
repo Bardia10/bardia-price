@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { fetchCompetitorsOverview } from "../services/productService";
+import { useEffect, useState, useCallback } from "react";
+import { fetchCompetitorsOverview, fetchCompetitorsOverviewLight } from "../services/productService";
 import { ApiError } from "../services/apiError";
 
 type Competitor = {
@@ -23,6 +23,7 @@ interface UseCompetitorsResult {
   lowestBadgeClass: string;
   avgBadgeText: string;
   avgBadgeClass: string;
+  refresh: (type?: 'full' | 'light') => void;
 }
 
 export function useCompetitorsOverview(
@@ -44,109 +45,121 @@ export function useCompetitorsOverview(
   const [avgBadgeText, setAvgBadgeText] = useState("");
   const [avgBadgeClass, setAvgBadgeClass] = useState("");
 
-  useEffect(() => {
+  const load = useCallback(async (type: 'full' | 'light' = 'full') => {
     if (!productId) {
       console.log("[useCompetitorsOverview] Skipping fetch — no productId yet");
       return;
     }
 
+    console.log(`[useCompetitorsOverview] Fetching competitors overview (type: ${type}) for productId:`, productId);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const fetcher = type === 'light' ? fetchCompetitorsOverviewLight : fetchCompetitorsOverview;
+      const rawData = await fetcher(authorizedFetch, productId);
+      console.log("[useCompetitorsOverview] Raw API response:", rawData);
+
+      // Normalize data from either snake_case (light) or camelCase (full)
+      const data = {
+        competitorsCount: rawData.competitors_count ?? rawData.competitorsCount ?? 0,
+        averagePrice: rawData.average_price ?? rawData.averagePrice ?? 0,
+        minPrice: rawData.min_price ?? rawData.minPrice ?? 0,
+      };
+      console.log("[useCompetitorsOverview] Normalized data:", data);
+
+
+      // Store summary data from API
+      setCompetitorsCount(data.competitorsCount);
+      setAvgPrice(data.averagePrice);
+      setLowestPrice(data.minPrice);
+
+      // For the overview, we only need summary data
+      // The detailed competitor list is now handled by useCompetitorsV2
+      setLowestCompetitor(null); // Will be calculated differently if needed
+
+      // --- Competitor price comparison logic ---
+      let lowestBadgeText = '';
+      let lowestBadgeClass = '';
+      let avgBadgeText = '';
+      let avgBadgeClass = '';
+
+      if (data.competitorsCount > 0 && productPrice > 0) {
+        // Use API-provided average price for comparison
+        const averageCompetitorPrice = data.averagePrice || 0;
+        const minPrice = data.minPrice || 0;
+
+        // Compare with lowest price if available
+        if (minPrice > 0) {
+          if (minPrice < productPrice) {
+            lowestBadgeText = `-${Math.round((productPrice - minPrice) / minPrice * 100)}% ارزان‌تر از شما`;
+            lowestBadgeClass = 'bg-red-50 text-red-700 border-red-200';
+          } else if (minPrice > productPrice) {
+            lowestBadgeText = `+${Math.round((minPrice - productPrice) / productPrice * 100)}% گران‌تر از شما`;
+            lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
+          } else {
+            lowestBadgeText = 'برابر با شما';
+            lowestBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+          }
+        }
+
+        // Compare with average price
+        if (averageCompetitorPrice > 0) {
+          if (averageCompetitorPrice < productPrice) {
+            avgBadgeText = `-${Math.round((productPrice - averageCompetitorPrice) / averageCompetitorPrice * 100)}% ارزان‌تر از شما`;
+            avgBadgeClass = 'bg-red-50 text-red-700 border-red-200';
+          } else if (averageCompetitorPrice > productPrice) {
+            avgBadgeText = `+${Math.round((averageCompetitorPrice - productPrice) / productPrice * 100)}% گران‌تر از شما`;
+            avgBadgeClass = 'bg-green-50 text-green-700 border-green-200';
+          } else {
+            avgBadgeText = 'برابر با شما';
+            avgBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+          }
+        }
+      } else {
+        lowestBadgeText = 'قیمت شما عالی است';
+        lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
+        avgBadgeText = 'قیمت شما عالی است';
+        avgBadgeClass = 'bg-green-50 text-green-700 border-green-200';
+      }
+      
+      setLowestBadgeText(lowestBadgeText);
+      setLowestBadgeClass(lowestBadgeClass);
+      setAvgBadgeText(avgBadgeText);
+      setAvgBadgeClass(avgBadgeClass);
+
+    } catch (err) {
+      console.error("[useCompetitorsOverview] Error fetching overview:", err);
+      if (err instanceof ApiError) {
+        setError(err.message);
+        if (err.status === 401) {
+          setBasalamToken('');
+          navigate('/login');
+        }
+      } else {
+        setError("خطا در دریافت خلاصه رقبا");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [productId, productPrice, authorizedFetch, setBasalamToken, navigate]);
+
+  useEffect(() => {
     let active = true;
 
-    async function load() {
-      console.log("[useCompetitorsOverview] Fetching competitors overview for productId:", productId);
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const data = await fetchCompetitorsOverview(authorizedFetch, productId);
-        console.log("[useCompetitorsOverview] API response:", data);
-
-        if (!active) return;
-
-        // Store summary data from API
-        setCompetitorsCount(data.competitorsCount || 0);
-        setAvgPrice(data.averagePrice || 0);
-        setLowestPrice(data.minPrice || 0); // ✅ store min price from backend
-
-        // For the overview, we only need summary data
-        // The detailed competitor list is now handled by useCompetitorsV2
-        setLowestCompetitor(null); // Will be calculated differently if needed
-
-        // --- Competitor price comparison logic ---
-        let lowestBadgeText = '';
-        let lowestBadgeClass = '';
-        let avgBadgeText = '';
-        let avgBadgeClass = '';
-
-        if (data.competitorsCount > 0 && productPrice > 0) {
-          // Use API-provided average price for comparison
-          const averageCompetitorPrice = data.averagePrice || 0;
-          const minPrice = data.minPrice || 0;
-
-          // Compare with lowest price if available
-          if (minPrice > 0) {
-            if (minPrice < productPrice) {
-              lowestBadgeText = `-${Math.round((productPrice - minPrice) / minPrice * 100)}% ارزان‌تر از شما`;
-              lowestBadgeClass = 'bg-red-50 text-red-700 border-red-200';
-            } else if (minPrice > productPrice) {
-              lowestBadgeText = `+${Math.round((minPrice - productPrice) / productPrice * 100)}% گران‌تر از شما`;
-              lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
-            } else {
-              lowestBadgeText = 'برابر با شما';
-              lowestBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
-            }
-          }
-
-          // Compare with average price
-          if (averageCompetitorPrice > 0) {
-            if (averageCompetitorPrice < productPrice) {
-              avgBadgeText = `-${Math.round((productPrice - averageCompetitorPrice) / averageCompetitorPrice * 100)}% ارزان‌تر از شما`;
-              avgBadgeClass = 'bg-red-50 text-red-700 border-red-200';
-            } else if (averageCompetitorPrice > productPrice) {
-              avgBadgeText = `+${Math.round((averageCompetitorPrice - productPrice) / productPrice * 100)}% گران‌تر از شما`;
-              avgBadgeClass = 'bg-green-50 text-green-700 border-green-200';
-            } else {
-              avgBadgeText = 'برابر با شما';
-              avgBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
-            }
-          }
-        } else {
-          lowestBadgeText = 'قیمت شما عالی است';
-          lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
-          avgBadgeText = 'قیمت شما عالی است';
-          avgBadgeClass = 'bg-green-50 text-green-700 border-green-200';
-        }
-        
-        setLowestBadgeText(lowestBadgeText);
-        setLowestBadgeClass(lowestBadgeClass);
-        setAvgBadgeText(avgBadgeText);
-        setAvgBadgeClass(avgBadgeClass);
-
-      } catch (err) {
-        console.error("[useCompetitorsOverview] Error fetching overview:", err);
-        if (err instanceof ApiError) {
-          setError(err.message);
-          if (err.status === 401) {
-            setBasalamToken('');
-            navigate('/login');
-          }
-        } else {
-          setError("خطا در دریافت خلاصه رقبا");
-        }
-      } finally {
-        if (active) {
-          setIsLoading(false);
-        }
-      }
+    if (active) {
+      load('full');
     }
-
-    load();
 
     return () => {
       active = false;
       console.log("[useCompetitorsOverview] Cleanup function run");
     };
-  }, [productId, productPrice, authorizedFetch, refreshTrigger]);
+  }, [productId, productPrice, authorizedFetch, refreshTrigger, load]);
+
+  const refresh = useCallback((type: 'full' | 'light' = 'light') => {
+    load(type);
+  }, [load]);
 
   return {
     isLoadingConfirmedCompetitors,
@@ -159,5 +172,6 @@ export function useCompetitorsOverview(
     lowestBadgeClass,
     avgBadgeText,
     avgBadgeClass,
+    refresh,
   };
 }

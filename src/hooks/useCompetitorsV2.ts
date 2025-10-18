@@ -27,8 +27,9 @@ export function useCompetitorsV2(
   productId: number | string | null,
   setBasalamToken: (token: string) => void,
   navigate: (path: string) => void,
-  refreshTrigger?: number
-): UseCompetitorsV2Result {
+  refreshTrigger?: number,
+  autoFetch: boolean = false
+): UseCompetitorsV2Result & { load: (page?: number) => void } {
   const [competitors, setCompetitors] = useState<CompetitorV2[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -76,6 +77,7 @@ export function useCompetitorsV2(
         setError(null);
       }
 
+      console.log('[useCompetitorsV2] Fetching competitors for page', page, 'isLoadingMore:', isLoadingMore);
       const data = await fetchCompetitorsV2(authorizedFetch, productId, page);
       const newCompetitors = data.products.map(parseCompetitor);
 
@@ -87,6 +89,7 @@ export function useCompetitorsV2(
 
       setHasMore(data.hasMore);
       setCurrentPage(page);
+      console.log('[useCompetitorsV2] Fetched competitors:', newCompetitors);
     } catch (err) {
       console.error("[useCompetitorsV2] Error fetching competitors:", err);
       
@@ -102,7 +105,17 @@ export function useCompetitorsV2(
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
+      console.log('[useCompetitorsV2] Loading finished. isLoading:', false, 'isLoadingMore:', false, 'competitors:', competitors);
     }
+  };
+
+
+  const load = (page: number = 1) => {
+    console.log('[useCompetitorsV2] load() called for page', page);
+    setIsLoading(true);
+    setCompetitors([]); // Clear previous competitors so modal can show spinner
+    setCurrentPage(page);
+    loadPage(page, false);
   };
 
   const loadMore = () => {
@@ -112,8 +125,7 @@ export function useCompetitorsV2(
   };
 
   const refresh = () => {
-    setCurrentPage(1);
-    loadPage(1, false);
+    load(1);
   };
 
   useEffect(() => {
@@ -123,9 +135,10 @@ export function useCompetitorsV2(
       setHasMore(false);
       return;
     }
-
-    refresh();
-  }, [productId, authorizedFetch, refreshTrigger]);
+    if (autoFetch) {
+      refresh();
+    }
+  }, [productId, authorizedFetch, refreshTrigger, autoFetch]);
 
   return {
     competitors,
@@ -135,5 +148,6 @@ export function useCompetitorsV2(
     isLoadingMore,
     loadMore,
     refresh,
+    load,
   };
 }

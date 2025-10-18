@@ -153,9 +153,6 @@ export async function manageExpensive(
   return data;
 }
 
-
-
-
 /** Add competitor: POST /competitors */
 export async function addCompetitor(
   authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
@@ -180,8 +177,6 @@ export async function addCompetitor(
   return data;
 }
 
-
-
 /** Fetch competitors overview: GET /v1/competitors-overview */
 export async function fetchCompetitorsOverview(
   authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
@@ -205,6 +200,26 @@ export async function fetchCompetitorsOverview(
     competitorsCount: typeof data?.competitors_count === "number" ? data.competitors_count : 0,
     competitors: Array.isArray(data?.competitors) ? data.competitors : [],
   };
+}
+
+/** Fetch competitors overview (light version): GET /v1/competitors-overview/light */
+export async function fetchCompetitorsOverviewLight(
+  authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
+  productId: string | number
+) {
+  const url = apiUrl(`/v1/competitors-overview/light?product_id=${encodeURIComponent(String(productId))}`);
+  const res = await authorizedFetch(url);
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      (data && (data.message || data.error)) || "خطا در دریافت خلاصه رقبا (light)",
+      data
+    );
+  }
+
+  return data;
 }
 
 /** Fetch competitors v2 (paginated): GET /v2/competitors */

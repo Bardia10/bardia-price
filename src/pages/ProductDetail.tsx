@@ -129,7 +129,45 @@ const ProductDetail = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   // Modal state for competitors
   const [isCompetitorsModalOpen, setIsCompetitorsModalOpen] = useState(false);
-  // ...existing code...
+  const competitorsV2Ref = useRef<any>(null);
+
+  const {
+    competitors: competitorsV2,
+    isLoading: isLoadingCompetitorsV2,
+    error: competitorsV2Error,
+    hasMore: hasMoreCompetitors,
+    isLoadingMore: isLoadingMoreCompetitors,
+    loadMore: loadMoreCompetitors,
+    load: loadCompetitorsV2,
+  } = useCompetitorsV2(
+    authorizedFetch,
+    productDetail?.id,
+    setBasalamToken,
+    navigate,
+    refreshTrigger,
+    false // autoFetch: do not fetch on mount
+  );
+
+  // When modal opens, fetch page 1 of competitors
+  useEffect(() => {
+    if (isCompetitorsModalOpen && productDetail?.id) {
+      loadCompetitorsV2(1);
+    }
+  }, [isCompetitorsModalOpen, productDetail?.id]);
+
+
+  // Hook to get competitor overview data
+  const { 
+    refresh: refreshCompetitorsOverview,
+    ...competitorsOverviewData 
+  } = useCompetitorsOverview(
+    authorizedFetch, 
+    actualProductId, 
+    productDetail?.price || 0,
+    setBasalamToken,
+    navigate,
+    refreshKey
+  );
 
   // Handler for deleting competitor
   const handleDeleteCompetitor = async (competitorId: number) => {
@@ -147,7 +185,7 @@ const ProductDetail = () => {
 
       setLocallyRemovedCompetitorIds(prev => new Set(prev).add(competitorId));
 
-      setRefreshTrigger(v => v + 1);
+      refreshCompetitorsOverview('light'); // Light refresh
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 401) {
         setBasalamToken("");
@@ -184,7 +222,7 @@ const ProductDetail = () => {
     setToast({ message: `رقیب حذف شد`, type: 'success' });
     setTimeout(() => setToast(null), 2000);
 
-    setRefreshTrigger(v => v + 1);
+    refreshCompetitorsOverview('light'); // Light refresh
   } catch (e: any) {
     setToast({ message: e?.message || 'خطا در حذف رقیب', type: 'error' });
     setTimeout(() => setToast(null), 2000);
@@ -271,30 +309,9 @@ const {
   lowestBadgeClass,
   avgBadgeText,
   avgBadgeClass,
-} = useCompetitorsOverview(
-  authorizedFetch,
-  productDetail?.id, // ✅ safe access
-  productDetail?.price || 0, // Pass product price for comparison
-  setBasalamToken,
-  navigate,
-  refreshTrigger
-);
+} = competitorsOverviewData;
 
-// New hook for competitors modal with pagination
-const {
-  competitors: competitorsV2,
-  isLoading: isLoadingCompetitorsV2,
-  error: competitorsV2Error,
-  hasMore: hasMoreCompetitors,
-  isLoadingMore: isLoadingMoreCompetitors,
-  loadMore: loadMoreCompetitors,
-} = useCompetitorsV2(
-  authorizedFetch,
-  productDetail?.id,
-  setBasalamToken,
-  navigate,
-  refreshTrigger
-);
+
 
 
 
@@ -371,7 +388,7 @@ useExpensiveManagement({
         setToast({ message: `"${similarProduct.title}" به عنوان رقیب اضافه شد`, type: 'success' });
         setTimeout(() => setToast(null), 3000);
 
-        setTimeout(() => setRefreshTrigger(prev => prev + 1), 1000);
+        refreshCompetitorsOverview('light'); // Light refresh
       } catch (error: any) {
         setToast({ message: error?.message || 'خطا در افزودن رقیب', type: 'error' });
         setTimeout(() => setToast(null), 3000);
@@ -619,7 +636,7 @@ useExpensiveManagement({
           onLoadMore={loadMoreCompetitors}
           selectedProductPrice={productDetail.price}
           deletingCompetitorIds={deletingCompetitorIds}
-          locallyRemovedCompetitorIds={locallyRemovedCompetitorIds} // ✅ pass optimistic state
+          locallyRemovedCompetitorIds={locallyRemovedCompetitorIds}
           handleDeleteCompetitor={handleDeleteCompetitor}
         />
 
