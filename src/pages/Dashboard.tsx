@@ -1,13 +1,13 @@
 import { useContext } from "react";
 import { AppContext } from "../context/AppContext";
-import { Package, AlertCircle } from "lucide-react";
+import { Package, AlertCircle, TrendingDown } from "lucide-react";
 
 const Dashboard = () => {
   const context = useContext(AppContext);
   if (!context) {
     throw new Error('Dashboard must be used within AppContext.Provider');
   }
-  const { navigate, setBasalamToken, clearMyProductsState, clearExpensiveProductsState } = context;
+  const { navigate, setBasalamToken, clearMyProductsState, clearExpensiveProductsState, clearCheapProductsState } = context;
 
   return (
     <div className="p-4 max-w-md mx-auto h-screen flex flex-col justify-center">
@@ -53,6 +53,27 @@ const Dashboard = () => {
           <AlertCircle className="mr-3" />
           <span className="text-xl font-semibold">
             محصولات گران‌تر از رقبا
+          </span>
+        </button>
+      </div>
+      <br/>
+      <br/>
+      {/* دکمه محصولات ارزان‌تر */}
+      <div className="flex flex-col items-center space-y-2 ">
+        <p className="text-lg text-green-700 leading-relaxed">
+          این دکمه محصولاتی را نشان می‌دهد که قیمتشان از رقبا پایین‌تر است.  
+          این محصولات می‌توانند برای جذب مشتری و رقابت بهتر مفید باشند.
+        </p>
+        <button
+          onClick={() => {
+            clearCheapProductsState();
+            navigate("cheap-products");
+          }}
+          className="w-full flex items-center justify-center p-4 bg-green-500 text-white rounded-xl shadow-md hover:bg-green-600 transition duration-300 ease-in-out transform hover:scale-105"
+        >
+          <TrendingDown className="mr-3" />
+          <span className="text-xl font-semibold">
+            محصولات ارزان‌تر از رقبا
           </span>
         </button>
       </div>

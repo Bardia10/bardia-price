@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams } from '
 import LoginPage from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
 import ExpensiveProductsPage from "./pages/ExpensiveProductsPage";
+import CheapProductsPage from "./pages/CheapProductsPage";
 import MyProducts from "./pages/MyProducts";
 import ProductDetail from "./pages/ProductDetail";
 import SignupPage from "./pages/SignupPage";
@@ -100,6 +101,29 @@ const AppContent: React.FC = () => {
       isInitialized: false,
     });
   }, []);
+
+  // Cheap Products state preservation
+  const [cheapProductsState, setCheapProductsStateInternal] = useState({
+    products: [] as any[],
+    scrollPosition: 0,
+    isInitialized: false,
+  });
+  
+  const setCheapProductsState = useCallback((updates: Partial<{
+    products: any[];
+    scrollPosition: number;
+    isInitialized: boolean;
+  }>) => {
+    setCheapProductsStateInternal(prev => ({ ...prev, ...updates }));
+  }, []);
+  
+  const clearCheapProductsState = useCallback(() => {
+    setCheapProductsStateInternal({
+      products: [] as any[],
+      scrollPosition: 0,
+      isInitialized: false,
+    });
+  }, []);
   
   const reactRouterNavigate = useNavigate();
 
@@ -181,7 +205,8 @@ const AppContent: React.FC = () => {
       'dashboard': '/',
       'my-products': '/my-products',
       'product-detail': options?.productId ? `/product/${options.productId}` : '/product/current',
-      'not-best-price': '/expensive-products'
+      'not-best-price': '/expensive-products',
+      'cheap-products': '/cheap-products'
     };
 
     const routePath = pathMap[path] || path;
@@ -222,7 +247,10 @@ const AppContent: React.FC = () => {
     expensiveProductsState,
     setExpensiveProductsState,
     clearExpensiveProductsState,
-  }), [navigate, selectedProduct, basalamToken, authorizedFetch, lastNavigation, tempToken, ssoFlow, myProductsState, setMyProductsState, clearMyProductsState, expensiveProductsState, setExpensiveProductsState, clearExpensiveProductsState]);
+    cheapProductsState,
+    setCheapProductsState,
+    clearCheapProductsState,
+  }), [navigate, selectedProduct, basalamToken, authorizedFetch, lastNavigation, tempToken, ssoFlow, myProductsState, setMyProductsState, clearMyProductsState, expensiveProductsState, setExpensiveProductsState, clearExpensiveProductsState, cheapProductsState, setCheapProductsState, clearCheapProductsState]);
 
   return (
     <AppContext.Provider value={contextValue}>
@@ -282,6 +310,11 @@ const AppContent: React.FC = () => {
           <Route path="/expensive-products" element={
             <ProtectedRoute>
               <ExpensiveProductsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/cheap-products" element={
+            <ProtectedRoute>
+              <CheapProductsPage />
             </ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />

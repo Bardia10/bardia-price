@@ -172,7 +172,7 @@ const ExpensiveProductsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header title="محصولات با قیمت نامناسب" onBack={() => {
+      <Header title="محصولات با قیمت خیلی بالا" onBack={() => {
         // Clear state when going back to dashboard
         clearExpensiveProductsState();
         navigate('dashboard');

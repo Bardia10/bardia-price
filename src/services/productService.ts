@@ -289,4 +289,70 @@ export async function triggerExpensiveReevaluation(
   return data;
 }
 
+/** Fetch cheap products: GET /v1/cheaps */
+export async function fetchCheapProducts(
+  authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>
+) {
+  const url = apiUrl(`/v1/cheaps`);
+  const res = await authorizedFetch(url);
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      (data && (data.message || data.error)) || "خطا در دریافت محصولات ارزان",
+      data
+    );
+  }
+
+  return {
+    products: Array.isArray(data?.products) ? data.products : [],
+  };
+}
+
+/** Get cheap factor: GET /cheapfactor */
+export async function getCheapFactor(
+  authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>
+) {
+  const url = apiUrl(`/cheapfactor`);
+  const res = await authorizedFetch(url);
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      (data && (data.message || data.error)) || "خطا در دریافت ضریب ارزانی",
+      data
+    );
+  }
+
+  return {
+    cheapFactor: parseFloat(data?.cheap_factor || "0.9"),
+  };
+}
+
+/** Update cheap factor: PUT /cheap_factor */
+export async function updateCheapFactor(
+  authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
+  cheapFactor: number
+) {
+  const url = apiUrl(`/cheap_factor`);
+  const res = await authorizedFetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cheap_factor: cheapFactor }),
+  });
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      (data && (data.message || data.error)) || "خطا در بروزرسانی ضریب ارزانی",
+      data
+    );
+  }
+
+  return data;
+}
+
 

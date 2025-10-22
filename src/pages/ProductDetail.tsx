@@ -515,6 +515,8 @@ useExpensiveManagement({
         onClick={() => {
           if (fromSection === 'not-best-price') {
             navigate('not-best-price');
+          } else if (fromSection === 'cheap-products') {
+            navigate('cheap-products');
           } else {
             navigate('my-products');
           }
