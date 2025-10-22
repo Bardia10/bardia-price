@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
-interface CheapFactorModalProps {
+interface ExpensiveFactorModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentFactor: number;
   onUpdate: (newFactor: number) => Promise<void>;
 }
 
-export const CheapFactorModal = ({ isOpen, onClose, currentFactor, onUpdate }: CheapFactorModalProps) => {
+export const ExpensiveFactorModal = ({ isOpen, onClose, currentFactor, onUpdate }: ExpensiveFactorModalProps) => {
   // Convert factor to percentage: (factor - 1) * 100
   // e.g., 0.9 → -10%, 1.1 → +10%
   const factorToPercent = (factor: number) => Math.round((factor - 1) * 100);
@@ -43,19 +43,19 @@ export const CheapFactorModal = ({ isOpen, onClose, currentFactor, onUpdate }: C
     const absPercent = Math.abs(percent);
     if (percent === 0) {
       return {
-        prefix: "با این تنظیمات، محصولی بیش از حد ارزان حساب می‌شود اگر قیمت آن زیر",
+        prefix: "با این تنظیمات، محصولی بیش از حد گران حساب می‌شود اگر قیمت آن بالاتر از",
         highlight: "ارزان‌ترین رقیب",
         suffix: "باشد."
       };
     } else if (percent < 0) {
       return {
-        prefix: "با این تنظیمات، محصولی بیش از حد ارزان حساب می‌شود اگر قیمت آن زیر",
+        prefix: "با این تنظیمات، محصولی بیش از حد گران حساب می‌شود اگر قیمت آن بالاتر از",
         highlight: `${absPercent} درصد کمتر از ارزان‌ترین رقیب`,
         suffix: "باشد."
       };
     } else {
       return {
-        prefix: "با این تنظیمات، محصولی بیش از حد ارزان حساب می‌شود اگر قیمت آن زیر",
+        prefix: "با این تنظیمات، محصولی بیش از حد گران حساب می‌شود اگر قیمت آن بالاتر از",
         highlight: `${absPercent} درصد بیشتر از ارزان‌ترین رقیب`,
         suffix: "باشد."
       };
@@ -103,7 +103,7 @@ export const CheapFactorModal = ({ isOpen, onClose, currentFactor, onUpdate }: C
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-xl font-bold text-gray-800">تنظیم ضریب ارزانی</h3>
+          <h3 className="text-xl font-bold text-gray-800">تنظیم ضریب گرانی</h3>
           <button
             onClick={onClose}
             className="p-1 hover:bg-gray-100 rounded-full transition"
@@ -117,7 +117,7 @@ export const CheapFactorModal = ({ isOpen, onClose, currentFactor, onUpdate }: C
         <div className="p-6 space-y-6">
           {/* Current Value Display */}
           <div className="text-center">
-            <div className="text-3xl font-bold text-green-600 mb-2">
+            <div className="text-3xl font-bold text-yellow-600 mb-2">
               {getPercentText(sliderValue)}
             </div>
             <p className="text-sm text-gray-500">
@@ -140,7 +140,7 @@ export const CheapFactorModal = ({ isOpen, onClose, currentFactor, onUpdate }: C
               value={sliderValue}
               onChange={(e) => setSliderValue(parseInt(e.target.value))}
               disabled={isUpdating || updateSuccess}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-500 disabled:opacity-50"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-yellow-500 disabled:opacity-50"
               dir="ltr"
             />
             <p className="text-xs text-gray-400 text-center mt-2">
@@ -149,17 +149,17 @@ export const CheapFactorModal = ({ isOpen, onClose, currentFactor, onUpdate }: C
           </div>
 
           {/* Explanation */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
             <p className="text-sm text-gray-700 leading-relaxed mb-3" dir="rtl">
               {getExplanationParts(sliderValue).prefix}{" "}
-              <span className="font-bold text-green-600 bg-green-100 px-1 rounded">
+              <span className="font-bold text-yellow-600 bg-yellow-100 px-1 rounded">
                 "{getExplanationParts(sliderValue).highlight}"
               </span>{" "}
               {getExplanationParts(sliderValue).suffix}
             </p>
             <p className="text-xs text-gray-600 leading-relaxed" dir="rtl">
-              <span className="font-semibold">مثال:</span> اگر ارزان‌ترین رقیب 100 هزار تومان باشد، آنگاه اگر محصول شما کمتر از{" "}
-              <span className="font-bold text-green-600">{getExamplePrice(sliderValue)} هزار تومان</span> باشد، ارزان حساب می‌شود.
+              <span className="font-semibold">مثال:</span> اگر ارزان‌ترین رقیب 100 هزار تومان باشد، آنگاه اگر محصول شما بیشتر از{" "}
+              <span className="font-bold text-yellow-600">{getExamplePrice(sliderValue)} هزار تومان</span> باشد، گران حساب می‌شود.
             </p>
           </div>
 
@@ -190,7 +190,7 @@ export const CheapFactorModal = ({ isOpen, onClose, currentFactor, onUpdate }: C
           <button
             onClick={handleApply}
             disabled={isUpdating || updateSuccess}
-            className="flex-1 px-4 py-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition disabled:opacity-50"
+            className="flex-1 px-4 py-3 rounded-lg bg-yellow-600 text-white font-semibold hover:bg-yellow-700 transition disabled:opacity-50"
           >
             {isUpdating ? "در حال بروزرسانی..." : updateSuccess ? "✓ انجام شد" : "اعمال تغییرات"}
           </button>

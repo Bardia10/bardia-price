@@ -3,14 +3,19 @@ import { AppContext } from "../context/AppContext";
 import {Header} from "../components/Header";
 import {LoadingSpinner} from "../components/LoadingSpinner";
 import {MyProductCard} from "../components/MyProductCard";
+import {ExpensiveFactorModal} from "../components/ExpensiveFactorModal";
 import * as productService from "../services/productService";
 import { ApiError } from "../services/apiError";
+import { Settings } from "lucide-react";
 
 const ExpensiveProductsPage = () => {
   const [isReevaluateModalOpen, setIsReevaluateModalOpen] = useState(false);
   const [pendingReevaluation, setPendingReevaluation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expensiveFactor, setExpensiveFactor] = useState<number | null>(null);
+  const [factorError, setFactorError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const context = useContext(AppContext);
   if (!context) {
@@ -68,6 +73,26 @@ const ExpensiveProductsPage = () => {
     };
   };
 
+  // Fetch expensive factor
+  const fetchExpensiveFactor = useCallback(async () => {
+    if (!basalamToken) return;
+    
+    try {
+      const data = await productService.getExpensiveFactor(authorizedFetch);
+      setExpensiveFactor(data.expensiveFactor);
+      setFactorError(null);
+      console.log("[ExpensiveProductsPage] Fetched expensive factor:", data.expensiveFactor);
+    } catch (err: any) {
+      console.error("[ExpensiveProductsPage] Factor error:", err);
+      setFactorError("دریافت اطلاعات با خطا مواجه شد. بعداً تلاش کنید.");
+      
+      if (err instanceof ApiError && err.status === 401) {
+        setBasalamToken("");
+        navigate("login");
+      }
+    }
+  }, [basalamToken, authorizedFetch, setBasalamToken, navigate]);
+
   // Fetch products function
   const fetchProducts = useCallback(async () => {
     if (!basalamToken) return;
@@ -105,6 +130,9 @@ const ExpensiveProductsPage = () => {
 
   // Initial fetch on page load or when coming from dashboard
   useEffect(() => {
+    // Always fetch the expensive factor
+    fetchExpensiveFactor();
+    
     // Only fetch if not initialized - this respects state preservation on back navigation
     if (!isInitialized) {
       console.log("[ExpensiveProductsPage] Fetching products - isInitialized:", isInitialized);
@@ -170,6 +198,56 @@ const ExpensiveProductsPage = () => {
     }
   };
 
+  const handleUpdateFactor = async (newFactor: number) => {
+    try {
+      await productService.updateExpensiveFactor(authorizedFetch, newFactor);
+      setExpensiveFactor(newFactor);
+      
+      // Refetch products after successful update
+      await fetchProducts();
+    } catch (err: any) {
+      console.error("[ExpensiveProductsPage] Update factor error:", err);
+      
+      if (err instanceof ApiError && err.status === 401) {
+        setBasalamToken("");
+        navigate("login");
+      }
+      
+      throw err; // Re-throw to let modal handle the error
+    }
+  };
+
+  const getPercentText = (factor: number) => {
+    const percent = Math.round((factor - 1) * 100);
+    const absPercent = Math.abs(percent);
+    
+    if (percent === 0) {
+      return {
+        prefix: "محصولی بیش از حد گران حساب می‌شود اگر قیمت آن بالاتر از",
+        highlight: "ارزان‌ترین رقیب",
+        suffix: "باشد."
+      };
+    } else if (percent < 0) {
+      return {
+        prefix: "محصولی بیش از حد گران حساب می‌شود اگر قیمت آن بالاتر از",
+        highlight: `${absPercent} درصد کمتر از ارزان‌ترین رقیب`,
+        suffix: "باشد."
+      };
+    } else {
+      return {
+        prefix: "محصولی بیش از حد گران حساب می‌شود اگر قیمت آن بالاتر از",
+        highlight: `${absPercent} درصد بیشتر از ارزان‌ترین رقیب`,
+        suffix: "باشد."
+      };
+    }
+  };
+
+  const getExamplePrice = (factor: number) => {
+    const basePrice = 100;
+    const threshold = Math.round(basePrice * factor);
+    return threshold;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header title="محصولات با قیمت خیلی بالا" onBack={() => {
@@ -178,6 +256,48 @@ const ExpensiveProductsPage = () => {
         navigate('dashboard');
       }} />
       <div className="p-4 flex flex-col space-y-4">
+        {/* Explanation Section */}
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="bg-yellow-500 p-2 rounded-lg flex-shrink-0">
+              <Settings className="text-white" size={24} />
+            </div>
+            <div className="flex-1">
+              {expensiveFactor !== null && !factorError ? (
+                <>
+                  <p className="text-gray-800 text-base leading-relaxed mb-2" dir="rtl">
+                    {getPercentText(expensiveFactor).prefix}{" "}
+                    <span className="font-bold text-yellow-700 bg-yellow-100 px-1 rounded">
+                      "{getPercentText(expensiveFactor).highlight}"
+                    </span>{" "}
+                    {getPercentText(expensiveFactor).suffix}
+                  </p>
+                  <p className="text-xs text-gray-600 mb-3" dir="rtl">
+                    <span className="font-semibold">مثال:</span> اگر ارزان‌ترین رقیب 100 هزار تومان باشد، آنگاه اگر محصول شما بیشتر از{" "}
+                    <span className="font-bold text-yellow-600">{getExamplePrice(expensiveFactor)} هزار تومان</span> باشد، گران حساب می‌شود.
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    برای تغییر این فرمول،{" "}
+                    <button
+                      onClick={() => setIsModalOpen(true)}
+                      className="text-yellow-600 font-semibold underline hover:text-yellow-700 transition"
+                    >
+                      اینجا کلیک کنید
+                    </button>
+                  </p>
+                </>
+              ) : factorError ? (
+                <div className="text-red-600 text-sm">
+                  <p className="font-semibold mb-1">خطا در دریافت اطلاعات</p>
+                  <p>{factorError}</p>
+                </div>
+              ) : (
+                <div className="text-gray-500 text-sm">در حال بارگذاری اطلاعات...</div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Reevaluate Button */}
         {/* <button
           className="mb-4 px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold shadow hover:bg-orange-700 transition w-fit self-end"
@@ -233,6 +353,16 @@ const ExpensiveProductsPage = () => {
           <p className="text-center text-gray-500 mt-8">محصول غیر رقابتی‌ای یافت نشد.</p>
         )}
       </div>
+
+      {/* Expensive Factor Modal */}
+      {expensiveFactor !== null && (
+        <ExpensiveFactorModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          currentFactor={expensiveFactor}
+          onUpdate={handleUpdateFactor}
+        />
+      )}
     </div>
   );
 };

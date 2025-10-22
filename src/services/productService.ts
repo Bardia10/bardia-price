@@ -355,4 +355,49 @@ export async function updateCheapFactor(
   return data;
 }
 
+/** Get expensive factor: GET /expensive_factor */
+export async function getExpensiveFactor(
+  authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>
+) {
+  const url = apiUrl(`/expensive_factor`);
+  const res = await authorizedFetch(url);
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      (data && (data.message || data.error)) || "خطا در دریافت ضریب گرانی",
+      data
+    );
+  }
+
+  return {
+    expensiveFactor: parseFloat(data?.expensive_factor || "1.0"),
+  };
+}
+
+/** Update expensive factor: PUT /expensive_factor */
+export async function updateExpensiveFactor(
+  authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
+  expensiveFactor: number
+) {
+  const url = apiUrl(`/expensive_factor`);
+  const res = await authorizedFetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expensive_factor: expensiveFactor }),
+  });
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      (data && (data.message || data.error)) || "خطا در بروزرسانی ضریب گرانی",
+      data
+    );
+  }
+
+  return data;
+}
+
 
