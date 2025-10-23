@@ -10,6 +10,12 @@ export default {
       fontFamily: {
         sans: ["Vazirmatn", "ui-sans-serif", "system-ui"],
       },
+      screens: {
+        'xs': '400px', // Custom breakpoint for smaller mobile devices
+        // sm: '640px' (default)
+        // md: '768px' (default)
+        // lg: '1024px' (default)
+      },
     },
   },
   plugins: [],
