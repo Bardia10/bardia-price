@@ -103,7 +103,7 @@ export const ExpensiveFactorModal = ({ isOpen, onClose, currentFactor, onUpdate 
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-xl font-bold text-gray-800">تنظیم ضریب گرانی</h3>
+          <h3 className="text-xl font-bold text-gray-800">تنظیم فرمول گرانی</h3>
           <button
             onClick={onClose}
             className="p-1 hover:bg-gray-100 rounded-full transition"

@@ -103,7 +103,7 @@ export const CheapFactorModal = ({ isOpen, onClose, currentFactor, onUpdate }: C
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-xl font-bold text-gray-800">تنظیم ضریب ارزانی</h3>
+          <h3 className="text-xl font-bold text-gray-800">تنظیم فرمول ارزانی</h3>
           <button
             onClick={onClose}
             className="p-1 hover:bg-gray-100 rounded-full transition"

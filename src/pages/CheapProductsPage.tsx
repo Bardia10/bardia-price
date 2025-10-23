@@ -4,6 +4,7 @@ import {Header} from "../components/Header";
 import {LoadingSpinner} from "../components/LoadingSpinner";
 import {MyProductCard} from "../components/MyProductCard";
 import {CheapFactorModal} from "../components/CheapFactorModal";
+import {TutorialModal} from "../components/TutorialModal";
 import * as productService from "../services/productService";
 import { ApiError } from "../services/apiError";
 import { Settings } from "lucide-react";
@@ -14,6 +15,11 @@ const CheapProductsPage = () => {
   const [cheapFactor, setCheapFactor] = useState<number | null>(null);
   const [factorError, setFactorError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  
+  // Tutorial video embed code (iframe version - updated after publishing)
+  const tutorialVideoEmbed = '<style>.h_iframe-aparat_embed_frame{position:relative;}.h_iframe-aparat_embed_frame .ratio{display:block;width:100%;height:auto;}.h_iframe-aparat_embed_frame iframe{position:absolute;top:0;left:0;width:100%;height:100%;}</style><div class="h_iframe-aparat_embed_frame"><span style="display: block;padding-top: 57%"></span><iframe src="https://www.aparat.com/video/video/embed/videohash/hgazw2t/vt/frame" allowFullScreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe></div>';
+  
   
   const context = useContext(AppContext);
   if (!context) {
@@ -223,11 +229,15 @@ const CheapProductsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header title="محصولات با قیمت خیلی پایین" onBack={() => {
-        // Clear state when going back to dashboard
-        clearCheapProductsState();
-        navigate('dashboard');
-      }} />
+      <Header 
+        title="محصولات با قیمت خیلی پایین" 
+        onBack={() => {
+          // Clear state when going back to dashboard
+          clearCheapProductsState();
+          navigate('dashboard');
+        }}
+        onHelp={() => setIsTutorialOpen(true)}
+      />
       <div className="p-4 flex flex-col space-y-4">
         {/* Explanation Section */}
         <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-5 shadow-sm">
@@ -297,6 +307,13 @@ const CheapProductsPage = () => {
           onUpdate={handleUpdateFactor}
         />
       )}
+
+      {/* Tutorial Modal */}
+      <TutorialModal
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        videoEmbedCode={tutorialVideoEmbed}
+      />
     </div>
   );
 };

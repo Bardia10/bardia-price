@@ -321,7 +321,7 @@ export async function getCheapFactor(
   if (!res.ok) {
     throw new ApiError(
       res.status,
-      (data && (data.message || data.error)) || "خطا در دریافت ضریب ارزانی",
+      (data && (data.message || data.error)) || "خطا در دریافت فرمول ارزانی",
       data
     );
   }
@@ -347,7 +347,7 @@ export async function updateCheapFactor(
   if (!res.ok) {
     throw new ApiError(
       res.status,
-      (data && (data.message || data.error)) || "خطا در بروزرسانی ضریب ارزانی",
+      (data && (data.message || data.error)) || "خطا در بروزرسانی فرمول ارزانی",
       data
     );
   }
@@ -366,7 +366,7 @@ export async function getExpensiveFactor(
   if (!res.ok) {
     throw new ApiError(
       res.status,
-      (data && (data.message || data.error)) || "خطا در دریافت ضریب گرانی",
+      (data && (data.message || data.error)) || "خطا در دریافت فرمول گرانی",
       data
     );
   }
@@ -392,7 +392,7 @@ export async function updateExpensiveFactor(
   if (!res.ok) {
     throw new ApiError(
       res.status,
-      (data && (data.message || data.error)) || "خطا در بروزرسانی ضریب گرانی",
+      (data && (data.message || data.error)) || "خطا در بروزرسانی فرمول گرانی",
       data
     );
   }
