@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
-import { Package, AlertCircle, TrendingDown, MessageSquare, LogOut, Mail } from "lucide-react";
+import { Package, AlertCircle, TrendingDown, Send, LogOut, Mail } from "lucide-react";
 import { Header } from "../components/Header";
 import { NoTutorialModal } from "../components/NoTutorialModal";
 
@@ -58,7 +58,7 @@ const Dashboard = () => {
     },
     {
       id: 'telegram-bot',
-      icon: MessageSquare,
+      icon: Send,
       title: 'اتصال به تلگرام',
       description: 'دریافت اعلان‌ها و گزارش‌ها از طریق ربات تلگرام',
       color: 'blue',
@@ -81,6 +81,15 @@ const Dashboard = () => {
 
   const getColorClasses = (color: string, disabled: boolean) => {
     if (disabled) {
+      // Special case for Telegram tile - keep it blue even when disabled
+      if (color === 'blue') {
+        return {
+          bg: 'bg-blue-400',
+          hover: '',
+          text: 'text-gray-600',
+          icon: 'text-blue-400',
+        };
+      }
       return {
         bg: 'bg-gray-300',
         hover: '',
