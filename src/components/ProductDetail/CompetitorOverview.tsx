@@ -88,7 +88,7 @@ const CompetitorOverview: React.FC<Props> = ({
         </button>
       )}
 
-      <h2 className="text-xl font-bold text-gray-800 mb-2">بررسی رقیب ها</h2>
+      <h2 className="text-xl font-bold text-gray-800 mb-2 mt-12">بررسی رقیب ها</h2>
       <span className="text-lg text-gray-500 mb-6">
         {isLoadingConfirmedCompetitors
           ? "در حال بارگذاری..."

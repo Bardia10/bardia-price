@@ -166,7 +166,7 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
             </p>
           ) : sortedSimilars.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-x-2 gap-y-3 w-full max-w-[500px] mx-auto">
                 {sortedSimilars.map((similar: any) => {
                     const id = Number(similar.id);
                     const isLoading = addingCompetitorIds.has(id);
@@ -176,7 +176,7 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
                   return (
                     <div
                       key={similar.id}
-                      className={`relative bg-gray-100 rounded-xl overflow-hidden flex flex-col items-center justify-between p-3 transition-all duration-300 ease-in-out ${
+                      className={`relative bg-gray-100 rounded-xl flex flex-col items-center justify-between p-2 transition-all duration-300 ease-in-out ${
                         isLoading
                           ? "cursor-wait opacity-70"
                           : isAdded
@@ -197,7 +197,7 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
                       <img
                         src={similar.photo_id}
                         alt={similar.title}
-                        className="w-28 h-28 object-cover rounded-lg mb-2 border border-gray-200 cursor-zoom-in select-none"
+                        className="w-full h-36 object-contain rounded-lg mb-2 border border-gray-200 cursor-zoom-in select-none"
                         onPointerDown={startHoldToZoom(similar.photo_id, (e) =>
                           e.stopPropagation()
                         )}
@@ -222,8 +222,8 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
                         <ExternalLink size={14} />
                       </button>
 
-                      {/* Title */}
-                      <h4 className="text-center text-sm font-semibold text-gray-800 mb-1 line-clamp-2">
+                      {/* Title - Wrapping with up to 3 lines */}
+                      <h4 className="w-full text-center text-sm font-semibold text-gray-800 mb-1 line-clamp-3 break-words">
                         {similar.title}
                       </h4>
 

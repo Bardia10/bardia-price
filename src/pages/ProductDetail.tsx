@@ -566,7 +566,7 @@ useExpensiveManagement({
             <span className="text-xs text-blue-600 font-semibold whitespace-nowrap">تازه‌سازی اطلاعات</span>
           </button>
 
-          <h2 className="text-xl font-bold text-gray-800 mb-2">
+          <h2 className="text-xl font-bold text-gray-800 mb-2 mt-12">
             {productDetail.title}
           </h2>
           <p className="text-emerald-600 text-2xl font-bold mb-3">
