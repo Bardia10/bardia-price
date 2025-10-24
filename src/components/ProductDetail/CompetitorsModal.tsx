@@ -17,6 +17,7 @@ interface CompetitorsModalProps {
   deletingCompetitorIds: Set<number>;
   locallyRemovedCompetitorIds: Set<number>; // ✅ new prop for optimistic updates
   handleDeleteCompetitor: (id: number) => void;
+  totalCompetitorsCount: number; // ✅ total count from backend
 }
 
 const CompetitorsModal: React.FC<CompetitorsModalProps> = ({
@@ -32,8 +33,21 @@ const CompetitorsModal: React.FC<CompetitorsModalProps> = ({
   deletingCompetitorIds,
   locallyRemovedCompetitorIds, // ✅ new prop for optimistic updates
   handleDeleteCompetitor,
+  totalCompetitorsCount, // ✅ total count from backend
 }) => {
   if (!isOpen) return null;
+
+  // Filter out locally removed competitors
+  const visibleCompetitors = competitors.filter(comp => !locallyRemovedCompetitorIds.has(comp.id));
+  
+  // Determine if we should show "no competitors" message
+  // Only show it if the backend says there are actually 0 competitors
+  const showNoCompetitorsMessage = totalCompetitorsCount === 0;
+  
+  // Show the "show more" button if:
+  // 1. hasMore is true (there are more pages), OR
+  // 2. The visible list is empty but totalCompetitorsCount > 0 (user removed all visible items but more exist)
+  const showLoadMoreButton = hasMore || (visibleCompetitors.length === 0 && totalCompetitorsCount > 0);
 
   return (
     <div
@@ -59,7 +73,7 @@ const CompetitorsModal: React.FC<CompetitorsModalProps> = ({
             <div className="text-center py-8">
               <p className="text-red-500 mb-4">{error}</p>
             </div>
-          ) : competitors.filter(comp => !locallyRemovedCompetitorIds.has(comp.id)).length === 0 ? (
+          ) : showNoCompetitorsMessage ? (
             <div className="text-center py-8">
               <p className="text-gray-500 mb-4">هنوز رقیبی اضافه نشده است.</p>
               <p className="text-sm text-gray-400">
@@ -68,10 +82,19 @@ const CompetitorsModal: React.FC<CompetitorsModalProps> = ({
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {[...competitors]
-                  .filter(comp => !locallyRemovedCompetitorIds.has(comp.id)) // ✅ filter out locally removed competitors
-                  .sort((a, b) => {
+              {visibleCompetitors.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">
+                    همه رقبای این صفحه حذف شدند.
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    برای مشاهده رقبای بیشتر، دکمه "نمایش بیشتر" را کلیک کنید.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  {[...visibleCompetitors]
+                    .sort((a, b) => {
                     if (typeof a.price === "number" && typeof b.price === "number")
                       return a.price - b.price;
                     if (typeof a.price === "number") return -1;
@@ -160,10 +183,11 @@ const CompetitorsModal: React.FC<CompetitorsModalProps> = ({
                     </div>
                   );
                 })}
-              </div>
+                </div>
+              )}
               
               {/* Show More Button */}
-              {hasMore && (
+              {showLoadMoreButton && (
                 <div className="flex justify-center mt-6">
                   <button
                     onClick={onLoadMore}

@@ -646,6 +646,7 @@ useExpensiveManagement({
           deletingCompetitorIds={deletingCompetitorIds}
           locallyRemovedCompetitorIds={locallyRemovedCompetitorIds}
           handleDeleteCompetitor={handleDeleteCompetitor}
+          totalCompetitorsCount={competitorsCount}
         />
 
       </div>
