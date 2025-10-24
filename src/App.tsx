@@ -169,11 +169,17 @@ const AppContent: React.FC = () => {
           console.log('✅ First load - storing version:', version);
           setCurrentVersion(version);
         } else if (version !== currentVersion) {
-          // New version detected
-          console.log('🚀 NEW VERSION DETECTED! Showing banner...');
+          // New version detected - automatically reload
+          console.log('🚀 NEW VERSION DETECTED! Auto-updating...');
           console.log('   Old:', currentVersion);
           console.log('   New:', version);
           setUpdateAvailable(true);
+          
+          // Wait 1 second to show the banner briefly, then auto-reload
+          setTimeout(() => {
+            console.log('♻️ Auto-reloading page to apply update...');
+            window.location.reload();
+          }, 1000);
         } else {
           console.log('✓ Version unchanged');
         }
@@ -260,10 +266,10 @@ const AppContent: React.FC = () => {
         {/* Update notification banner */}
         {updateAvailable && (
           <div className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 px-4 shadow-2xl border-b-4 border-green-700 animate-pulse">
-            <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-3" dir="rtl">
+            <div className="max-w-7xl mx-auto flex items-center justify-center flex-wrap gap-3" dir="rtl">
+              <div className="flex items-center gap-3">
                 <svg 
-                  className="w-8 h-8 flex-shrink-0 animate-bounce" 
+                  className="w-8 h-8 flex-shrink-0 animate-spin" 
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -272,19 +278,13 @@ const AppContent: React.FC = () => {
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
                     strokeWidth={2.5} 
-                    d="M13 10V3L4 14h7v7l9-11h-7z" 
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
                   />
                 </svg>
                 <span className="font-bold text-lg">
-                  نسخه جدید منتشر شد! لطفاً برای دریافت آخرین بروزرسانی‌ها صفحه را تازه کنید.
+                  نسخه جدید در حال بارگذاری است...
                 </span>
               </div>
-              <button
-                onClick={handleUpdate}
-                className="bg-white text-green-700 px-6 py-3 rounded-lg font-bold text-lg hover:bg-green-50 transition-all shadow-lg hover:shadow-xl hover:scale-105 border-2 border-green-700 animate-pulse"
-              >
-                🔄 تازه‌سازی صفحه
-              </button>
             </div>
           </div>
         )}
