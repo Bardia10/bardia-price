@@ -3,6 +3,7 @@ import { AppContext } from "../context/AppContext";
 import { Header } from "../components/Header";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { MyProductCard } from "../components/MyProductCard";
+import { NoTutorialModal } from "../components/NoTutorialModal";
 
 import { Search, ChevronLeft, Package, Sparkles, AlertCircle, Eye, EyeOff, Settings, X, ExternalLink, Wrench, SlidersHorizontal, RotateCcw, BadgeCheck } from 'lucide-react';
 
@@ -32,6 +33,7 @@ const MyProducts = () => {
   const [isLoadingApi, setIsLoadingApi] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
   // Map API product shape to internal Product type
@@ -192,12 +194,23 @@ const MyProducts = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header title="محصولات من" onBack={() => {
-        // Clear state when going back to dashboard
-        clearMyProductsState();
-        navigate('dashboard');
-      }} />
-      <div className="flex justify-center mb-4 mt-6">
+      <Header 
+        onBack={() => {
+          // Clear state when going back to dashboard
+          clearMyProductsState();
+          navigate('dashboard');
+        }}
+        onHelp={() => setIsTutorialOpen(true)}
+        onHome={() => {
+          clearMyProductsState();
+          navigate('dashboard');
+        }}
+        onContact={() => navigate('contact-us')}
+      />
+      <div className="text-center mt-4 mb-2">
+        <h1 className="text-2xl font-bold text-gray-800">محصولات من</h1>
+      </div>
+      <div className="flex justify-center mb-4">
         <p className="text-lg text-emerald-700 leading-relaxed">
           روی محصول مورد نظر کلیک کنین تا با رقیب ها مقایسش کنین
         </p>
@@ -265,6 +278,13 @@ const MyProducts = () => {
           <p className="text-center text-gray-500 mt-8">محصولی یافت نشد.</p>
         )}
       </div>
+
+      {/* No Tutorial Modal */}
+      <NoTutorialModal
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        onContactUs={() => navigate('contact-us')}
+      />
     </div>
   );
 };

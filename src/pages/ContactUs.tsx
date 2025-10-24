@@ -2,6 +2,7 @@ import React from "react";
 import { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { Header } from "../components/Header";
+import { NoTutorialModal } from "../components/NoTutorialModal";
 import { Mail, MessageCircle, Send, Copy, Check } from "lucide-react";
 
 const ContactUs = () => {
@@ -12,6 +13,7 @@ const ContactUs = () => {
   const { navigate } = context;
 
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   const handleCopy = async (text: string, fieldId: string) => {
     try {
@@ -117,12 +119,19 @@ const ContactUs = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 flex flex-col" dir="rtl">
       <Header 
-        title="تماس با ما" 
         onBack={() => navigate("dashboard")}
+        onHelp={() => setIsTutorialOpen(true)}
+        onHome={() => navigate("dashboard")}
+        onContact={() => {}} // Show but do nothing (already on contact page)
       />
 
       <div className="flex-1 overflow-y-auto pb-6">
         <div className="max-w-4xl mx-auto p-4 sm:p-6">
+          {/* Page Title */}
+          <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-800">تماس با ما</h1>
+          </div>
+
           {/* Welcome Message */}
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border-2 border-emerald-100">
             <div className="text-center">
@@ -246,6 +255,13 @@ const ContactUs = () => {
           </div>
         </div>
       </div>
+
+      {/* No Tutorial Modal */}
+      <NoTutorialModal
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        onContactUs={() => {}} // Already on contact page
+      />
     </div>
   );
 };

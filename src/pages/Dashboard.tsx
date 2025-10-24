@@ -1,6 +1,8 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { Package, AlertCircle, TrendingDown, MessageSquare, LogOut, Mail } from "lucide-react";
+import { Header } from "../components/Header";
+import { NoTutorialModal } from "../components/NoTutorialModal";
 
 const Dashboard = () => {
   const context = useContext(AppContext);
@@ -8,6 +10,8 @@ const Dashboard = () => {
     throw new Error('Dashboard must be used within AppContext.Provider');
   }
   const { navigate, setBasalamToken, clearMyProductsState, clearExpensiveProductsState, clearCheapProductsState } = context;
+
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   const handleLogout = () => {
     setBasalamToken("");
@@ -124,16 +128,13 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm p-4 flex items-center justify-between sticky top-0 z-10">
-        <h1 className="text-xl font-bold text-emerald-800">داشبورد قیمت یار</h1>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-200"
-        >
-          <LogOut size={20} />
-          <span>خروج</span>
-        </button>
-      </header>
+      <Header 
+        showLogout={true}
+        onLogout={handleLogout}
+        onHelp={() => setIsTutorialOpen(true)}
+        onContact={() => navigate("contact-us")}
+        onHome={() => {}} // Show but do nothing (already on dashboard)
+      />
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
@@ -141,7 +142,7 @@ const Dashboard = () => {
           {/* Welcome Message */}
           <div className="text-center mb-4 sm:mb-8">
             <h2 className="text-3xl font-bold text-emerald-800 mb-2">
-              به داشبورد خوش آمدید!
+              داشبورد
             </h2>
             <p className="text-gray-600">
               برای شروع، یکی از گزینه‌های زیر را انتخاب کنید
@@ -220,6 +221,13 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* No Tutorial Modal */}
+      <NoTutorialModal
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        onContactUs={() => navigate("contact-us")}
+      />
     </div>
   );
 };

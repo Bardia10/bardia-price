@@ -257,15 +257,24 @@ const ExpensiveProductsPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header 
-        title="محصولات با قیمت خیلی بالا" 
         onBack={() => {
           // Clear state when going back to dashboard
           clearExpensiveProductsState();
           navigate('dashboard');
         }}
         onHelp={() => setIsTutorialOpen(true)}
+        onHome={() => {
+          clearExpensiveProductsState();
+          navigate('dashboard');
+        }}
+        onContact={() => navigate('contact-us')}
       />
       <div className="p-4 flex flex-col space-y-4">
+        {/* Page Title */}
+        <div className="text-center mb-2">
+          <h1 className="text-2xl font-bold text-gray-800">محصولات با قیمت خیلی بالا</h1>
+        </div>
+        
         {/* Explanation Section */}
         <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-start gap-3">

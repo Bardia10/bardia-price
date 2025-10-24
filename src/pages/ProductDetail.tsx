@@ -11,6 +11,7 @@ import { AppContext } from "../context/AppContext";
 // components
 import { Header } from "../components/Header";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { NoTutorialModal } from "../components/NoTutorialModal";
 
 // utils
 import { formatPrice } from "../lib/format";
@@ -51,6 +52,8 @@ const ProductDetail = () => {
   const [deletingCompetitorIds, setDeletingCompetitorIds] = useState<Set<number>>(new Set());
   // State for locally removed competitor IDs to handle optimistic UI updates
   const [locallyRemovedCompetitorIds, setLocallyRemovedCompetitorIds] = useState<Set<number>>(new Set());
+  // Tutorial modal state
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   const context = useContext(AppContext);
   if (!context) {
@@ -75,6 +78,15 @@ const ProductDetail = () => {
       if (stored) setFromSection(stored);
     }
   }, [lastNavigation]);
+
+  // Handle back button
+  const handleBack = () => {
+    if (fromSection) {
+      navigate(fromSection);
+    } else {
+      navigate('my-products');
+    }
+  };
 
 
   // Get the actual product ID to use (from URL parameter or selectedProduct fallback)
@@ -484,7 +496,17 @@ useExpensiveManagement({
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header title="جزئیات محصول" compact />
+      <Header 
+        onBack={handleBack}
+        onHelp={() => setIsTutorialOpen(true)}
+        onHome={() => navigate('dashboard')}
+        onContact={() => navigate('contact-us')}
+        compact
+      />
+      {/* Page Title */}
+      <div className="text-center mt-2 mb-4 px-4">
+        <h1 className="text-xl font-bold text-gray-800">جزئیات محصول</h1>
+      </div>
       {/* Refresh Button */}
       <button
         onClick={() => setRefreshKey((k) => k + 1)}
@@ -643,6 +665,13 @@ useExpensiveManagement({
         />
 
       </div>
+
+      {/* No Tutorial Modal */}
+      <NoTutorialModal
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        onContactUs={() => navigate('contact-us')}
+      />
     </div>
   );
 };
