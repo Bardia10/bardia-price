@@ -9,6 +9,7 @@ import ProductDetail from "./pages/ProductDetail";
 import SignupPage from "./pages/SignupPage";
 import SetPassword from "./pages/SetPassword";
 import AuthCallback from "./pages/AuthCallback";
+import ContactUs from "./pages/ContactUs";
 
 
 // components
@@ -206,7 +207,8 @@ const AppContent: React.FC = () => {
       'my-products': '/my-products',
       'product-detail': options?.productId ? `/product/${options.productId}` : '/product/current',
       'not-best-price': '/expensive-products',
-      'cheap-products': '/cheap-products'
+      'cheap-products': '/cheap-products',
+      'contact-us': '/contact-us'
     };
 
     const routePath = pathMap[path] || path;
@@ -254,7 +256,7 @@ const AppContent: React.FC = () => {
 
   return (
     <AppContext.Provider value={contextValue}>
-      <div className="font-['Inter'] antialiased bg-gray-50 text-gray-900 min-h-screen">
+      <div className="antialiased bg-gray-50 text-gray-900 min-h-screen">
         {/* Update notification banner */}
         {updateAvailable && (
           <div className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 px-4 shadow-2xl border-b-4 border-green-700 animate-pulse">
@@ -273,14 +275,13 @@ const AppContent: React.FC = () => {
                     d="M13 10V3L4 14h7v7l9-11h-7z" 
                   />
                 </svg>
-                <span className="font-bold text-lg" style={{ fontFamily: 'Inter, Tahoma, sans-serif' }}>
+                <span className="font-bold text-lg">
                   نسخه جدید منتشر شد! لطفاً برای دریافت آخرین بروزرسانی‌ها صفحه را تازه کنید.
                 </span>
               </div>
               <button
                 onClick={handleUpdate}
                 className="bg-white text-green-700 px-6 py-3 rounded-lg font-bold text-lg hover:bg-green-50 transition-all shadow-lg hover:shadow-xl hover:scale-105 border-2 border-green-700 animate-pulse"
-                style={{ fontFamily: 'Inter, Tahoma, sans-serif' }}
               >
                 🔄 تازه‌سازی صفحه
               </button>
@@ -315,6 +316,11 @@ const AppContent: React.FC = () => {
           <Route path="/cheap-products" element={
             <ProtectedRoute>
               <CheapProductsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/contact-us" element={
+            <ProtectedRoute>
+              <ContactUs />
             </ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />

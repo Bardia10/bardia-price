@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { AppContext } from "../context/AppContext";
-import { Package, AlertCircle, TrendingDown, MessageSquare, LogOut } from "lucide-react";
+import { Package, AlertCircle, TrendingDown, MessageSquare, LogOut, Mail } from "lucide-react";
 
 const Dashboard = () => {
   const context = useContext(AppContext);
@@ -62,6 +62,17 @@ const Dashboard = () => {
       disabled: true,
       comingSoon: true,
     },
+    {
+      id: 'contact-us',
+      icon: Mail,
+      title: 'تماس با ما',
+      description: 'سوالات، مشکلات یا پیشنهادات خود را با ما در میان بگذارید',
+      color: 'purple',
+      onClick: () => {
+        navigate("contact-us");
+      },
+      disabled: false,
+    },
   ];
 
   const getColorClasses = (color: string, disabled: boolean) => {
@@ -98,6 +109,12 @@ const Dashboard = () => {
         hover: 'hover:bg-blue-600',
         text: 'text-blue-800',
         icon: 'text-blue-600',
+      },
+      purple: {
+        bg: 'bg-purple-500',
+        hover: 'hover:bg-purple-600',
+        text: 'text-purple-800',
+        icon: 'text-purple-600',
       },
     };
 
