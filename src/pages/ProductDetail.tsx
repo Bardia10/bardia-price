@@ -507,47 +507,6 @@ useExpensiveManagement({
       <div className="text-center mt-2 mb-4 px-4">
         <h1 className="text-xl font-bold text-gray-800">جزئیات محصول</h1>
       </div>
-      {/* Refresh Button */}
-      <button
-        onClick={() => setRefreshKey((k) => k + 1)}
-        className="fixed top-2 right-2 z-40 bg-white/90 border border-gray-200 p-2 rounded-full shadow hover:bg-white flex items-center justify-center gap-1 overflow-visible"
-        aria-label="تازه‌سازی اطلاعات"
-        title="تازه‌سازی اطلاعات"
-      >
-        <div className="flex items-center justify-center h-5 w-5">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-full w-full text-blue-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h5M20 20v-5h-5M5 19a9 9 0 1113-13"
-            />
-          </svg>
-        </div>
-        <span className="text-xs text-blue-600 font-semibold">تازه‌سازی</span>
-      </button>
-
-      <button
-        onClick={() => {
-          if (fromSection === 'not-best-price') {
-            navigate('not-best-price');
-          } else if (fromSection === 'cheap-products') {
-            navigate('cheap-products');
-          } else {
-            navigate('my-products');
-          }
-        }}
-        className="fixed top-2 left-2 z-40 bg-white/90 border border-gray-200 p-2 rounded-full shadow hover:bg-white"
-        aria-label="بازگشت"
-      >
-        <ChevronLeft size={20} className="text-gray-700" />
-      </button>
 
       {showOriginalProductFloating && (
           <div
@@ -582,7 +541,31 @@ useExpensiveManagement({
           cancelHoldToZoom={cancelHoldToZoom}
         />
 
-        <div className="bg-white p-4 rounded-xl shadow-md mb-4 flex flex-col items-center">
+        <div className="bg-white p-4 rounded-xl shadow-md mb-4 flex flex-col items-center relative">
+          {/* Refresh Button - Top Left Corner */}
+          <button
+            onClick={() => setRefreshKey((k) => k + 1)}
+            className="absolute top-3 left-3 flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-2 rounded-full shadow-sm transition-all duration-200"
+            aria-label="تازه‌سازی اطلاعات"
+            title="تازه‌سازی اطلاعات"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 text-blue-600 flex-shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            <span className="text-xs text-blue-600 font-semibold whitespace-nowrap">تازه‌سازی اطلاعات</span>
+          </button>
+
           <h2 className="text-xl font-bold text-gray-800 mb-2">
             {productDetail.title}
           </h2>
@@ -603,6 +586,7 @@ useExpensiveManagement({
           avgBadgeText={avgBadgeText}
           avgBadgeClass={avgBadgeClass}
           onOpenModal={() => setIsCompetitorsModalOpen(true)}
+          onRefresh={() => setRefreshKey((k) => k + 1)}
         />
 
 

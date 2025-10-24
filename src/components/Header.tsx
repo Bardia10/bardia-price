@@ -50,10 +50,10 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onContact}
             className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-all duration-200 whitespace-nowrap"
-            title="تماس با ما"
+            title="پشتیبانی"
           >
             <Mail size={18} />
-            <span className="font-medium">تماس</span>
+            <span className="font-medium">پشتیبانی</span>
           </button>
         ) : (
           <div className="w-20"></div>
@@ -84,8 +84,8 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full transition-all duration-200 whitespace-nowrap"
             title="خروج"
           >
-            <LogOut size={18} />
             <span className="font-medium">خروج</span>
+            <LogOut size={18} className="transform scale-x-[-1]" />
           </button>
         ) : onBack ? (
           <button

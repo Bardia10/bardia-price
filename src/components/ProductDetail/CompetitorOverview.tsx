@@ -25,6 +25,7 @@ interface Props {
   avgBadgeText: string;
   avgBadgeClass: string;
   onOpenModal: () => void;
+  onRefresh?: () => void; // New prop for refresh functionality
 }
 
 const CompetitorOverview: React.FC<Props> = ({
@@ -39,6 +40,7 @@ const CompetitorOverview: React.FC<Props> = ({
   avgBadgeText,
   avgBadgeClass,
   onOpenModal,
+  onRefresh,
 }) => {
   useEffect(() => {
     console.log("[CompetitorOverview] Props:", {
@@ -59,7 +61,33 @@ const CompetitorOverview: React.FC<Props> = ({
   ]);
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow-md mb-4 flex flex-col items-center">
+    <div className="bg-white p-4 rounded-xl shadow-md mb-4 flex flex-col items-center relative">
+      {/* Refresh Button - Top Left Corner */}
+      {onRefresh && (
+        <button
+          onClick={onRefresh}
+          className="absolute top-3 left-3 flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-2 rounded-full shadow-sm transition-all duration-200"
+          aria-label="تازه‌سازی اطلاعات"
+          title="تازه‌سازی اطلاعات"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 text-blue-600 flex-shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+          <span className="text-xs text-blue-600 font-semibold whitespace-nowrap">تازه‌سازی اطلاعات</span>
+        </button>
+      )}
+
       <h2 className="text-xl font-bold text-gray-800 mb-2">بررسی رقیب ها</h2>
       <span className="text-lg text-gray-500 mb-6">
         {isLoadingConfirmedCompetitors
