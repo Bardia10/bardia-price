@@ -136,7 +136,11 @@ export async function deleteCompetitor(
   return data;
 }
 
-/** Expensives management: /expensives endpoint PUT/DELETE */
+/** 
+ * ✅ DISABLED: Expensives management - currently not being used
+ * This function was previously used to add/remove products from the "expensives" list
+ * POST/DELETE /expensives endpoint 
+ */
 export async function manageExpensive(
   authorizedFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>,
   selfProductId: number | string,

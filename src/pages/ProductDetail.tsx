@@ -23,7 +23,8 @@ import { ApiError } from "../services/apiError";
 
 import { useProductDetail } from "../hooks/useProductDetail"; 
 import { useSimilars } from "../hooks/useSimilars"; 
-import { useExpensiveManagement } from "../hooks/useExpensiveManagement"; 
+// ✅ DISABLED: Not needed for now - auto-manage product in expensives
+// import { useExpensiveManagement } from "../hooks/useExpensiveManagement"; 
 import { useCompetitorsOverview } from "../hooks/useCompetitorsOverview"; 
 import { useCompetitorsV2 } from "../hooks/useCompetitorsV2"; 
 
@@ -343,16 +344,19 @@ const {
 
 
 
-   // Auto-manage product in expensives based on price comparison with competitors
-useExpensiveManagement({
-  selectedProduct: productDetail, // Use productDetail as the product data
-  productDetail,
-  confirmedCompetitorDetails: competitorsV2,
-  authorizedFetch,
-  basalamToken,
-  setBasalamToken,
-  navigate
-});
+  // ✅ DISABLED: Auto-manage product in expensives - not needed for now
+  // This hook automatically adds/removes products from expensives based on price comparison
+  /*
+  useExpensiveManagement({
+    selectedProduct: productDetail, // Use productDetail as the product data
+    productDetail,
+    confirmedCompetitorDetails: competitorsV2,
+    authorizedFetch,
+    basalamToken,
+    setBasalamToken,
+    navigate
+  });
+  */
 
 
   const handleScroll = useCallback(() => {

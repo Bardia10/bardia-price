@@ -2,6 +2,14 @@ import { useEffect } from "react";
 import * as productService from "../services/productService";
 import { ApiError } from "../services/apiError";
 
+/**
+ * ✅ DISABLED: This hook is currently disabled and not being used
+ * It was previously used to automatically manage products in the "expensives" list
+ * based on price comparison with competitors.
+ * 
+ * The hook is kept here for future reference if needed.
+ */
+
 interface UseExpensiveManagementProps {
   selectedProduct: any;
   productDetail: any;
