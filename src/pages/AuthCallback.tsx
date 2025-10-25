@@ -43,6 +43,8 @@ const AuthCallback: React.FC = () => {
         // Exchange code for token
         const tokenResponse = await exchangeCodeForToken(code, state);
         console.log('[AuthCallback] Token exchange successful', tokenResponse);
+        console.log('[AuthCallback] has-password value:', tokenResponse['has-password']);
+        console.log('[AuthCallback] has-password type:', typeof tokenResponse['has-password']);
 
         // Ensure we have a valid token
         if (!tokenResponse || !tokenResponse.token) {
@@ -50,7 +52,7 @@ const AuthCallback: React.FC = () => {
         }
 
         // Check if user needs to set password based on API response (same for both login and signup)
-        if (!tokenResponse['has-password']) {
+        if (tokenResponse['has-password'] === false) {
           // User needs to set password: store as temp token
           console.log('[AuthCallback] User needs to set password - redirecting to set password page');
           setTempToken(tokenResponse.token);

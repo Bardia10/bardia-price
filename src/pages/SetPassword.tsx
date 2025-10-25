@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
@@ -12,6 +12,7 @@ const SetPassword: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const isNavigating = useRef(false);
 
   const context = useContext(AppContext);
   if (!context) {
@@ -20,9 +21,9 @@ const SetPassword: React.FC = () => {
 
   const { tempToken, setTempToken, setSsoFlow } = context;
 
-  // Redirect if no temp token (user shouldn't be here)
+  // Redirect if no temp token (user shouldn't be here) - but only if not currently navigating away
   useEffect(() => {
-    if (!tempToken) {
+    if (!tempToken && !isNavigating.current) {
       console.log('[SetPassword] No temp token found, redirecting to signup');
       navigate('/signup', { replace: true });
     }
@@ -60,24 +61,30 @@ const SetPassword: React.FC = () => {
         password: response.password
       }));
 
-      // Clear temp token and SSO flow
-      setTempToken('');
-      setSsoFlow(null);
-
-
-        // Show success and log in with JWT from sessionStorage
-        alert(`ثبت‌نام موفقیت‌آمیز! نام کاربری شما: ${response.username}`);
-        const pendingJwt = sessionStorage.getItem('pendingJwt');
-        if (pendingJwt) {
-          // Log in and redirect to dashboard
-          context.setBasalamToken(pendingJwt);
-          localStorage.setItem('authToken', pendingJwt);
-          sessionStorage.removeItem('pendingJwt');
-          navigate('/', { replace: true });
-        } else {
-          // Fallback: redirect to login
-          navigate('/login', { replace: true });
-        }
+      // Show success and log in with JWT from sessionStorage
+      alert(`ثبت‌نام موفقیت‌آمیز! نام کاربری شما: ${response.username}`);
+      const pendingJwt = sessionStorage.getItem('pendingJwt');
+      if (pendingJwt) {
+        // Log in and redirect to welcome page (for new users)
+        context.setBasalamToken(pendingJwt);
+        localStorage.setItem('authToken', pendingJwt);
+        sessionStorage.removeItem('pendingJwt');
+        
+        // Mark that we're navigating to prevent the useEffect from redirecting
+        isNavigating.current = true;
+        
+        // Clear temp token and SSO flow AFTER setting auth token
+        setTempToken('');
+        setSsoFlow(null);
+        
+        navigate('/welcome', { replace: true });
+      } else {
+        // Fallback: clear tokens and redirect to login
+        isNavigating.current = true;
+        setTempToken('');
+        setSsoFlow(null);
+        navigate('/login', { replace: true });
+      }
 
     } catch (err) {
       console.error('[SetPassword] Error setting password:', err);

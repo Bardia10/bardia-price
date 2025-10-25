@@ -10,6 +10,7 @@ import SignupPage from "./pages/SignupPage";
 import SetPassword from "./pages/SetPassword";
 import AuthCallback from "./pages/AuthCallback";
 import ContactUs from "./pages/ContactUs";
+import WelcomePage from "./pages/WelcomePage";
 
 
 // components
@@ -292,6 +293,11 @@ const AppContent: React.FC = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/set-password" element={<SetPassword />} />
+          <Route path="/welcome" element={
+            <ProtectedRoute>
+              <WelcomePage />
+            </ProtectedRoute>
+          } />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/" element={
             <ProtectedRoute>
