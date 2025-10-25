@@ -173,6 +173,13 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
                     const isAdded = similar.isCompetitor;
                     const isDeleting = deletingCompetitorIds.has(id);
 
+                    // Debug logging
+                    console.log('[SimilarProducts] Rendering product:', id, {
+                      isLoading,
+                      isAdded,
+                      isDeleting
+                    });
+
                   return (
                     <div
                       key={similar.id}

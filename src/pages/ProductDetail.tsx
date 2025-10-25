@@ -219,12 +219,19 @@ const ProductDetail = () => {
   };
 
   const handleDeleteCompetitorClick = async (competitorId: number) => {
-  if (deletingCompetitorIds.has(competitorId)) return;
+  if (deletingCompetitorIds.has(competitorId)) {
+    console.log('[handleDeleteCompetitorClick] Already deleting:', competitorId);
+    return;
+  }
+
+  console.log('[handleDeleteCompetitorClick] Deleting competitor:', competitorId);
 
   setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
 
   try {
     await productService.deleteCompetitor(authorizedFetch, productDetail.id, competitorId);
+
+    console.log('[handleDeleteCompetitorClick] Successfully deleted competitor:', competitorId);
 
     setSearchResults(prevResults =>
       prevResults.map((s: any) =>
@@ -232,19 +239,25 @@ const ProductDetail = () => {
       )
     );
 
-    setLocallyRemovedCompetitorIds(prev => new Set(prev).add(competitorId));
+    setLocallyRemovedCompetitorIds(prev => {
+      const newSet = new Set(prev).add(competitorId);
+      console.log('[handleDeleteCompetitorClick] Added to locallyRemovedCompetitorIds:', competitorId);
+      return newSet;
+    });
 
     setToast({ message: `رقیب حذف شد`, type: 'success' });
     setTimeout(() => setToast(null), 2000);
 
     refreshCompetitorsOverview('light'); // Light refresh
   } catch (e: any) {
+    console.error('[handleDeleteCompetitorClick] Error deleting competitor:', e);
     setToast({ message: e?.message || 'خطا در حذف رقیب', type: 'error' });
     setTimeout(() => setToast(null), 2000);
   } finally {
     setDeletingCompetitorIds(prev => {
       const next = new Set(prev);
       next.delete(competitorId);
+      console.log('[handleDeleteCompetitorClick] Removed from deletingCompetitorIds:', competitorId);
       return next;
     });
   }
@@ -380,10 +393,23 @@ useExpensiveManagement({
 
     const productId = Number(similarProduct.id); // ✅ ensure number type
 
-    if (addingCompetitorIds.has(productId)) return;
+    console.log('[addAsCompetitor] Adding competitor:', productId);
+
+    if (addingCompetitorIds.has(productId)) {
+      console.log('[addAsCompetitor] Already adding this competitor, skipping');
+      return;
+    }
 
     // immediately mark as loading
     setAddingCompetitorIds(prev => new Set(prev).add(productId));
+
+    // ✅ FIX: Remove from locallyRemovedCompetitorIds when adding
+    setLocallyRemovedCompetitorIds(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(productId);
+      console.log('[addAsCompetitor] Removed from locallyRemovedCompetitorIds:', productId);
+      return newSet;
+    });
 
     addCompetitorQueueRef.current.push(async () => {
       try {
@@ -393,6 +419,8 @@ useExpensiveManagement({
           productId,
           similarProduct.vendorIdentifier
         );
+
+        console.log('[addAsCompetitor] Successfully added competitor:', productId);
 
         setSearchResults(prevResults =>
           prevResults.map((s: SearchProduct) =>
@@ -405,6 +433,7 @@ useExpensiveManagement({
 
         refreshCompetitorsOverview('light'); // Light refresh
       } catch (error: any) {
+        console.error('[addAsCompetitor] Error adding competitor:', error);
         setToast({ message: error?.message || 'خطا در افزودن رقیب', type: 'error' });
         setTimeout(() => setToast(null), 3000);
       } finally {
@@ -412,6 +441,7 @@ useExpensiveManagement({
         setAddingCompetitorIds(prev => {
           const newSet = new Set(prev);
           newSet.delete(productId);
+          console.log('[addAsCompetitor] Removed from addingCompetitorIds:', productId);
           return newSet;
         });
       }
@@ -435,10 +465,28 @@ useExpensiveManagement({
         p.description?.toLowerCase().includes(term)
       );
     })
-    .map((p: any) => ({
-      ...p,
-      isCompetitor: (p.isCompetitor || competitorIds.has(Number(p.id))) && !locallyRemovedCompetitorIds.has(Number(p.id)),
-    }));
+    .map((p: any) => {
+      const productId = Number(p.id);
+      const isCompetitorFromState = p.isCompetitor;
+      const isCompetitorFromList = competitorIds.has(productId);
+      const isLocallyRemoved = locallyRemovedCompetitorIds.has(productId);
+      const finalIsCompetitor = (isCompetitorFromState || isCompetitorFromList) && !isLocallyRemoved;
+      
+      // Debug logging for tracking state
+      if (isCompetitorFromState || isCompetitorFromList || isLocallyRemoved) {
+        console.log('[sortedSimilars] Product:', productId, {
+          isCompetitorFromState,
+          isCompetitorFromList,
+          isLocallyRemoved,
+          finalIsCompetitor
+        });
+      }
+      
+      return {
+        ...p,
+        isCompetitor: finalIsCompetitor,
+      };
+    });
 
 
       
