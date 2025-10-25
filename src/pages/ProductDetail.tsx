@@ -11,7 +11,7 @@ import { AppContext } from "../context/AppContext";
 // components
 import { Header } from "../components/Header";
 import { LoadingSpinner } from "../components/LoadingSpinner";
-import { NoTutorialModal } from "../components/NoTutorialModal";
+import { TutorialModal } from "../components/TutorialModal";
 
 // utils
 import { formatPrice } from "../lib/format";
@@ -54,6 +54,9 @@ const ProductDetail = () => {
   const [locallyRemovedCompetitorIds, setLocallyRemovedCompetitorIds] = useState<Set<number>>(new Set());
   // Tutorial modal state
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  
+  // Tutorial video embed code
+  const tutorialVideoEmbed = '<style>.h_iframe-aparat_embed_frame{position:relative;}.h_iframe-aparat_embed_frame .ratio{display:block;width:100%;height:auto;}.h_iframe-aparat_embed_frame iframe{position:absolute;top:0;left:0;width:100%;height:100%;}</style><div class="h_iframe-aparat_embed_frame"><span style="display: block;padding-top: 57%"></span><iframe src="https://www.aparat.com/video/video/embed/videohash/bdd176r/vt/frame"  allowFullScreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe></div>';
 
   const context = useContext(AppContext);
   if (!context) {
@@ -651,11 +654,11 @@ useExpensiveManagement({
 
       </div>
 
-      {/* No Tutorial Modal */}
-      <NoTutorialModal
+      {/* Tutorial Modal */}
+      <TutorialModal
         isOpen={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}
-        onContactUs={() => navigate('contact-us')}
+        videoEmbedCode={tutorialVideoEmbed}
       />
     </div>
   );

@@ -3,7 +3,7 @@ import { AppContext } from "../context/AppContext";
 import { Header } from "../components/Header";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { MyProductCard } from "../components/MyProductCard";
-import { NoTutorialModal } from "../components/NoTutorialModal";
+import { TutorialModal } from "../components/TutorialModal";
 
 import { Search, ChevronLeft, Package, Sparkles, AlertCircle, Eye, EyeOff, Settings, X, ExternalLink, Wrench, SlidersHorizontal, RotateCcw, BadgeCheck } from 'lucide-react';
 
@@ -34,6 +34,10 @@ const MyProducts = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  
+  // Tutorial video embed code (iframe version)
+  const tutorialVideoEmbed = '<style>.h_iframe-aparat_embed_frame{position:relative;}.h_iframe-aparat_embed_frame .ratio{display:block;width:100%;height:auto;}.h_iframe-aparat_embed_frame iframe{position:absolute;top:0;left:0;width:100%;height:100%;}</style><div class="h_iframe-aparat_embed_frame"><span style="display: block;padding-top: 57%"></span><iframe src="https://www.aparat.com/video/video/embed/videohash/mmxm5d8/vt/frame"  allowFullScreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe></div>';
+  
   const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
   // Map API product shape to internal Product type
@@ -279,11 +283,11 @@ const MyProducts = () => {
         )}
       </div>
 
-      {/* No Tutorial Modal */}
-      <NoTutorialModal
+      {/* Tutorial Modal */}
+      <TutorialModal
         isOpen={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}
-        onContactUs={() => navigate('contact-us')}
+        videoEmbedCode={tutorialVideoEmbed}
       />
     </div>
   );

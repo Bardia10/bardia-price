@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { Package, AlertCircle, TrendingDown, Send, LogOut, Mail } from "lucide-react";
 import { Header } from "../components/Header";
-import { NoTutorialModal } from "../components/NoTutorialModal";
+import { TutorialModal } from "../components/TutorialModal";
 
 const Dashboard = () => {
   const context = useContext(AppContext);
@@ -12,6 +12,9 @@ const Dashboard = () => {
   const { navigate, setBasalamToken, clearMyProductsState, clearExpensiveProductsState, clearCheapProductsState } = context;
 
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  
+  // Tutorial video embed code
+  const tutorialVideoEmbed = '<style>.h_iframe-aparat_embed_frame{position:relative;}.h_iframe-aparat_embed_frame .ratio{display:block;width:100%;height:auto;}.h_iframe-aparat_embed_frame iframe{position:absolute;top:0;left:0;width:100%;height:100%;}</style><div class="h_iframe-aparat_embed_frame"><span style="display: block;padding-top: 57%"></span><iframe src="https://www.aparat.com/video/video/embed/videohash/trh80za/vt/frame"  allowFullScreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe></div>';
 
   const handleLogout = () => {
     setBasalamToken("");
@@ -231,11 +234,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* No Tutorial Modal */}
-      <NoTutorialModal
+      {/* Tutorial Modal */}
+      <TutorialModal
         isOpen={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}
-        onContactUs={() => navigate("contact-us")}
+        videoEmbedCode={tutorialVideoEmbed}
       />
     </div>
   );
