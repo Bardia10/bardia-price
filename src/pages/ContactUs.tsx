@@ -60,7 +60,7 @@ const ContactUs = () => {
       icon: Send,
       title: 'تلگرام',
       description: 'آیدی تلگرام را کپی کنید و پیام خود را ارسال کنید',
-      value: '@BardiaFar',
+      value: '@Ghazalbagheri2004',
       color: 'blue',
       type: 'copy' as const,
     },
