@@ -26,6 +26,10 @@ import { formatPrice } from "./lib/format";
 //context
 import { AppContext, AppContextType } from "./context/AppContext";
 
+// hooks
+import { usePageTracking } from "./hooks/usePageTracking";
+import { Mixpanel } from "./lib/mixpanel";
+
 
 // ProtectedRoute component for authentication
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -35,6 +39,9 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 // App Content component that uses React Router hooks
 const AppContent: React.FC = () => {
+  // Enable automatic page view tracking
+  usePageTracking();
+  
   const [basalamToken, setBasalamToken] = useState<string>(() => localStorage.getItem('authToken') || '');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [globalLoading, setGlobalLoading] = useState<boolean>(false);
@@ -132,8 +139,15 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (basalamToken) {
       localStorage.setItem('authToken', basalamToken);
+      // Identify user in Mixpanel when they log in
+      // Using token as user ID (you can replace with actual user ID if available)
+      Mixpanel.identify(basalamToken);
+      Mixpanel.track('User Login');
     } else {
       localStorage.removeItem('authToken');
+      // Reset Mixpanel on logout
+      Mixpanel.track('User Logout');
+      Mixpanel.reset();
     }
   }, [basalamToken]);
 
