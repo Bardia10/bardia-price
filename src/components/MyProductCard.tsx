@@ -7,6 +7,7 @@ type ProductCardData = {
   title: string;
   price: number;
   photo_id: string;
+  cheapestPrice?: number | null;
 };
 
 type MyProductCardProps = {
@@ -33,7 +34,16 @@ export const MyProductCard: React.FC<MyProductCardProps> = ({ product, onClick, 
       <h3 className="text-sm font-semibold text-gray-800 mb-1 leading-tight line-clamp-2">
         {product.title}
       </h3>
-      <p className="text-emerald-600 font-bold text-base mt-auto">{formatPrice(product.price)}</p>
+      <div className="mt-auto">
+        <p className="text-emerald-600 font-bold text-sm" dir="rtl">
+          قیمت شما: {formatPrice(product.price)}
+        </p>
+        {product.cheapestPrice !== undefined && product.cheapestPrice !== null && (
+          <p className="text-red-600 font-bold text-sm mt-1" dir="rtl">
+            ارزان‌ترین رقیب: {formatPrice(product.cheapestPrice)}
+          </p>
+        )}
+      </div>
     </div>
     <div className="p-3 border-t border-gray-100">
       <button

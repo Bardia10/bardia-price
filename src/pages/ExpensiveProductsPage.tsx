@@ -55,6 +55,7 @@ const ExpensiveProductsPage = () => {
     const id = String(p?.id ?? '');
     const title = String(p?.title ?? '');
     const price = Number(p?.price ?? 0);
+    const cheapestPrice = p?.cheapest_price !== undefined && p?.cheapest_price !== null ? Number(p.cheapest_price) : null;
     const photoObj = p?.photo || {};
     const primaryPhoto = photoObj.md || photoObj.sm || photoObj.lg || photoObj.xs || photoObj.original || 'https://placehold.co/200x200/cccccc/333333?text=No+Image';
     const photos: string[] = [];
@@ -71,6 +72,7 @@ const ExpensiveProductsPage = () => {
       id,
       title,
       price,
+      cheapestPrice,
       photo_id: primaryPhoto,
       photos,
       description,
