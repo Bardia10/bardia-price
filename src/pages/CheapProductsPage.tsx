@@ -303,7 +303,17 @@ const CheapProductsPage = () => {
           ))}
         </div>
         {products.length === 0 && !isLoading && (
-          <p className="text-center text-gray-500 mt-8">محصول ارزان‌تری یافت نشد.</p>
+          <div className="text-center mt-8 space-y-4">
+            <p className="text-gray-500">محصول ارزان‌تری یافت نشد.</p>
+            <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 max-w-2xl mx-auto">
+              <p className="text-gray-800 font-bold text-lg" dir="rtl">
+                ⚠️ شاید هنوز رقیب اضافه نکرده‌اید!
+              </p>
+              <p className="text-gray-700 mt-2" dir="rtl">
+                به بخش <span className="font-semibold">"همه محصولات"</span> بروید، روی محصولات خود کلیک کنید و رقیب‌ها را به آن‌ها اضافه کنید.
+              </p>
+            </div>
+          </div>
         )}
       </div>
 
