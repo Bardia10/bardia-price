@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, createContext, useRef, useCallback, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
+import * as Sentry from "@sentry/react";
 import LoginPage from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
 import ExpensiveProductsPage from "./pages/ExpensiveProductsPage";
@@ -139,15 +140,22 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (basalamToken) {
       localStorage.setItem('authToken', basalamToken);
+      
       // Identify user in Mixpanel when they log in
-      // Using token as user ID (you can replace with actual user ID if available)
       Mixpanel.identify(basalamToken);
       Mixpanel.track('User Login');
+      
+      // Identify user in Sentry for error tracking
+      Sentry.setUser({ id: basalamToken });
     } else {
       localStorage.removeItem('authToken');
+      
       // Reset Mixpanel on logout
       Mixpanel.track('User Logout');
       Mixpanel.reset();
+      
+      // Clear user in Sentry
+      Sentry.setUser(null);
     }
   }, [basalamToken]);
 
@@ -245,10 +253,50 @@ const AppContent: React.FC = () => {
     }
   }, [basalamToken, reactRouterNavigate]);
 
-  const authorizedFetch = useCallback((input: RequestInfo | URL, init: RequestInit = {}) => {
+  const authorizedFetch = useCallback(async (input: RequestInfo | URL, init: RequestInit = {}) => {
     const headers = new Headers(init.headers || {});
     if (basalamToken) headers.set('Authorization', `Bearer ${basalamToken}`);
-    return fetch(input, { ...init, headers });
+    
+    try {
+      const response = await fetch(input, { ...init, headers });
+      
+      // Track API errors in Sentry
+      if (!response.ok) {
+        const url = typeof input === 'string' ? input : input.toString();
+        Sentry.captureException(new Error(`API Error: ${response.status} ${response.statusText}`), {
+          contexts: {
+            api: {
+              url: url,
+              method: init.method || 'GET',
+              status: response.status,
+              statusText: response.statusText,
+            },
+          },
+          tags: {
+            api_error: true,
+            status_code: response.status.toString(),
+          },
+        });
+      }
+      
+      return response;
+    } catch (error) {
+      // Track network errors (no connection, timeout, etc.)
+      const url = typeof input === 'string' ? input : input.toString();
+      Sentry.captureException(error, {
+        contexts: {
+          api: {
+            url: url,
+            method: init.method || 'GET',
+            error_type: 'network_error',
+          },
+        },
+        tags: {
+          network_error: true,
+        },
+      });
+      throw error;
+    }
   }, [basalamToken]);
 
   const contextValue: AppContextType = useMemo(() => ({
@@ -355,13 +403,50 @@ const AppContent: React.FC = () => {
 // Loosely typed app context for speed; can be refined later
 // export const AppContext = createContext<any>(null);
 
+// Error Fallback UI
+const ErrorFallback = ({ error, resetError }: any) => {
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '100vh',
+      padding: '20px',
+      textAlign: 'center',
+      fontFamily: 'Vazirmatn, sans-serif',
+    }}>
+      <h1 style={{ fontSize: '24px', marginBottom: '10px' }}>متأسفانه خطایی رخ داد</h1>
+      <p style={{ color: '#666', marginBottom: '20px' }}>
+        مشکل گزارش شد و به زودی رفع خواهد شد
+      </p>
+      <button
+        onClick={() => window.location.reload()}
+        style={{
+          padding: '10px 20px',
+          backgroundColor: '#007bff',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer',
+          fontSize: '16px',
+        }}
+      >
+        بارگذاری مجدد صفحه
+      </button>
+    </div>
+  );
+};
 
+const SentryErrorBoundary = Sentry.ErrorBoundary as any;
 
 const App = () => {
   return (
-    <BrowserRouter>
-      <AppContent />
-    </BrowserRouter>
+    <SentryErrorBoundary fallback={ErrorFallback} showDialog>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </SentryErrorBoundary>
   );
 };
 

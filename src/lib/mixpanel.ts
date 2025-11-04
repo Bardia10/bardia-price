@@ -5,7 +5,7 @@ mixpanel.init('bc1f155f890f3f74aeb802b99c4b497b', {
   autocapture: true,
   record_sessions_percent: 100,
   api_host: 'https://api-eu.mixpanel.com',
-  debug: import.meta.env.DEV, // Enable debug mode in development
+  debug: false, // Disable debug mode to reduce console noise
 });
 
 // Helper functions for tracking events
