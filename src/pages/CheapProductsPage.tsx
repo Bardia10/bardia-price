@@ -1,13 +1,13 @@
-import { useContext, useEffect, useState, useCallback } from "react";
+import { useContext, useEffect, useState, useRef, useCallback } from "react";
 import { AppContext } from "../context/AppContext";
-import {Header} from "../components/Header";
-import {LoadingSpinner} from "../components/LoadingSpinner";
-import {MyProductCard} from "../components/MyProductCard";
-import {CheapFactorModal} from "../components/CheapFactorModal";
-import {TutorialModal} from "../components/TutorialModal";
+import { Header } from "../components/Header";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { MyProductCard } from "../components/MyProductCard";
+import { CheapFactorModal } from "../components/CheapFactorModal";
+import { TutorialModal } from "../components/TutorialModal";
 import * as productService from "../services/productService";
 import { ApiError } from "../services/apiError";
-import { Settings } from "lucide-react";
+import { Settings, ArrowRight } from "lucide-react";
 
 const CheapProductsPage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -311,9 +311,16 @@ const CheapProductsPage = () => {
               <p className="text-gray-800 font-bold text-lg" dir="rtl">
                 ⚠️ شاید هنوز رقیب اضافه نکرده‌اید!
               </p>
-              <p className="text-gray-700 mt-2" dir="rtl">
+              <p className="text-gray-700 mt-2 mb-4" dir="rtl">
                 به بخش <span className="font-semibold">"همه محصولات"</span> بروید، روی محصولات خود کلیک کنید و رقیب‌ها را به آن‌ها اضافه کنید.
               </p>
+              <button
+                onClick={() => navigate('my-products')}
+                className="mt-3 py-3 px-6 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-base font-semibold rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2 mx-auto"
+              >
+                <ArrowRight size={18} />
+                رفتن به همه محصولات
+              </button>
             </div>
           </div>
         )}

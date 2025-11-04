@@ -7,7 +7,7 @@ import {ExpensiveFactorModal} from "../components/ExpensiveFactorModal";
 import {TutorialModal} from "../components/TutorialModal";
 import * as productService from "../services/productService";
 import { ApiError } from "../services/apiError";
-import { Settings } from "lucide-react";
+import { Settings, ArrowRight } from "lucide-react";
 
 const ExpensiveProductsPage = () => {
   const [isReevaluateModalOpen, setIsReevaluateModalOpen] = useState(false);
@@ -377,9 +377,16 @@ const ExpensiveProductsPage = () => {
               <p className="text-gray-800 font-bold text-lg" dir="rtl">
                 ⚠️ شاید هنوز رقیب اضافه نکرده‌اید!
               </p>
-              <p className="text-gray-700 mt-2" dir="rtl">
+              <p className="text-gray-700 mt-2 mb-4" dir="rtl">
                 به بخش <span className="font-semibold">"همه محصولات"</span> بروید، روی محصولات خود کلیک کنید و رقیب‌ها را به آن‌ها اضافه کنید.
               </p>
+              <button
+                onClick={() => navigate('my-products')}
+                className="mt-3 py-3 px-6 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-base font-semibold rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2 mx-auto"
+              >
+                <ArrowRight size={18} />
+                رفتن به همه محصولات
+              </button>
             </div>
           </div>
         )}
