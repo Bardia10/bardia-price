@@ -27,6 +27,7 @@ interface Props {
   onOpenModal: () => void;
   onRefresh?: () => void; // New prop for refresh functionality
   onScrollToSearch?: () => void; // ✅ New prop for scrolling to search section
+  isProcessingChanges?: boolean; // ✅ New prop for showing processing overlay
 }
 
 const CompetitorOverview: React.FC<Props> = ({
@@ -43,6 +44,7 @@ const CompetitorOverview: React.FC<Props> = ({
   onOpenModal,
   onRefresh,
   onScrollToSearch, // ✅ New prop
+  isProcessingChanges = false, // ✅ New prop with default value
 }) => {
   useEffect(() => {
     console.log("[CompetitorOverview] Props:", {
@@ -64,6 +66,21 @@ const CompetitorOverview: React.FC<Props> = ({
 
   return (
     <div className="bg-white p-4 rounded-xl shadow-md mb-4 flex flex-col items-center relative">
+      {/* Processing Overlay - Gray see-through overlay when adding/deleting competitors */}
+      {isProcessingChanges && (
+        <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-[2px] rounded-xl z-10 flex flex-col items-center justify-center">
+          <div className="bg-white/95 rounded-lg shadow-lg px-6 py-4 flex flex-col items-center gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-emerald-600"></div>
+            <p className="text-gray-700 font-medium text-center">
+              در حال اعمال تغییرات...
+            </p>
+            <p className="text-gray-500 text-sm text-center">
+              لطفاً صبر کنید
+            </p>
+          </div>
+        </div>
+      )}
+      
       {/* Refresh Button - Top Left Corner */}
       {onRefresh && (
         <button

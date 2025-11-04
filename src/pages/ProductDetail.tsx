@@ -143,6 +143,8 @@ const ProductDetail = () => {
   const competitorDetailCacheRef = useRef<Map<number, ConfirmedCompetitorDetail>>(new Map());
   // Track loading state for adding competitors
   const [addingCompetitorIds, setAddingCompetitorIds] = useState<Set<number>>(new Set());
+  // Track if any competitor add/delete operation is in progress (for overlay on CompetitorOverview)
+  const [isCompetitorOperationInProgress, setIsCompetitorOperationInProgress] = useState(false);
   // Refresh trigger for confirmed competitors
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   // Modal state for competitors
@@ -197,6 +199,7 @@ const ProductDetail = () => {
   const handleDeleteCompetitor = async (competitorId: number) => {
     if (deletingCompetitorIds.has(competitorId)) return;
     setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
+    setIsCompetitorOperationInProgress(true);
 
     try {
       await productService.deleteCompetitor(authorizedFetch, productDetail.id, competitorId);
@@ -209,7 +212,8 @@ const ProductDetail = () => {
 
       setLocallyRemovedCompetitorIds(prev => new Set(prev).add(competitorId));
 
-      refreshCompetitorsOverview('light'); // Light refresh
+      // DON'T refresh here - will refresh in useEffect when operations complete
+      // refreshCompetitorsOverview('light'); // Light refresh
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 401) {
         setBasalamToken("");
@@ -236,6 +240,7 @@ const ProductDetail = () => {
   console.log('[handleDeleteCompetitorClick] Deleting competitor:', competitorId);
 
   setDeletingCompetitorIds(prev => new Set(prev).add(competitorId));
+  setIsCompetitorOperationInProgress(true);
 
   try {
     await productService.deleteCompetitor(authorizedFetch, productDetail.id, competitorId);
@@ -257,7 +262,8 @@ const ProductDetail = () => {
     setToast({ message: `رقیب حذف شد`, type: 'success' });
     setTimeout(() => setToast(null), 2000);
 
-    refreshCompetitorsOverview('light'); // Light refresh
+    // DON'T refresh here - will refresh in useEffect when operations complete
+    // refreshCompetitorsOverview('light'); // Light refresh
   } catch (e: any) {
     console.error('[handleDeleteCompetitorClick] Error deleting competitor:', e);
     setToast({ message: e?.message || 'خطا در حذف رقیب', type: 'error' });
@@ -278,6 +284,18 @@ const ProductDetail = () => {
       navigate('my-products');
     }
   }, [actualProductId, navigate]);
+
+  // Watch for when all competitor operations complete, then refresh overview ONCE
+  useEffect(() => {
+    const hasActiveOperations = addingCompetitorIds.size > 0 || deletingCompetitorIds.size > 0;
+    
+    if (!hasActiveOperations && isCompetitorOperationInProgress) {
+      // All operations completed! Refresh overview once
+      console.log('[ProductDetail] All competitor operations completed - refreshing overview');
+      setIsCompetitorOperationInProgress(false);
+      refreshCompetitorsOverview('light');
+    }
+  }, [addingCompetitorIds.size, deletingCompetitorIds.size, isCompetitorOperationInProgress, refreshCompetitorsOverview]);
 
 
   // Map search API response to internal format
@@ -387,11 +405,18 @@ const {
   const processAddCompetitorQueue = async () => {
     if (isProcessingQueueRef.current) return;
     isProcessingQueueRef.current = true;
+    setIsCompetitorOperationInProgress(true);
+    
     while (addCompetitorQueueRef.current.length > 0) {
       const fn = addCompetitorQueueRef.current.shift();
       if (fn) await fn();
     }
+    
     isProcessingQueueRef.current = false;
+    setIsCompetitorOperationInProgress(false);
+    
+    // Refresh overview ONCE after all operations complete
+    refreshCompetitorsOverview('light');
   };
 
   type SearchProduct = any;
@@ -443,7 +468,8 @@ const {
         setToast({ message: `"${similarProduct.title}" به عنوان رقیب اضافه شد`, type: 'success' });
         setTimeout(() => setToast(null), 3000);
 
-        refreshCompetitorsOverview('light'); // Light refresh
+        // DON'T refresh here - will refresh once after queue completes
+        // refreshCompetitorsOverview('light'); // Light refresh
       } catch (error: any) {
         console.error('[addAsCompetitor] Error adding competitor:', error);
         setToast({ message: error?.message || 'خطا در افزودن رقیب', type: 'error' });
@@ -662,6 +688,7 @@ const {
           onOpenModal={() => setIsCompetitorsModalOpen(true)}
           onRefresh={() => setRefreshKey((k) => k + 1)}
           onScrollToSearch={scrollToSearchSection} // ✅ New prop for scrolling to search
+          isProcessingChanges={isCompetitorOperationInProgress} // ✅ New prop for overlay
         />
 
 
