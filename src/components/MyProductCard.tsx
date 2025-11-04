@@ -1,5 +1,5 @@
 import React from "react";
-import { Eye } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { formatPrice } from "../lib/format";
 
 type ProductCardData = {
@@ -29,6 +29,14 @@ export const MyProductCard: React.FC<MyProductCardProps> = ({ product, onClick, 
           target.src = "https://placehold.co/200x200/cccccc/333333?text=No+Image";
         }}
       />
+      {/* External link button - top right corner */}
+      <button
+        className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 border hover:bg-white shadow-sm transition-all duration-200"
+        onClick={onBasalamPageClick}
+        title="مشاهده در Basalam"
+      >
+        <ExternalLink size={16} />
+      </button>
     </div>
     <div className="p-3 flex-grow flex flex-col" onClick={onClick}>
       <h3 className="text-sm font-semibold text-gray-800 mb-1 leading-tight line-clamp-2">
@@ -44,15 +52,6 @@ export const MyProductCard: React.FC<MyProductCardProps> = ({ product, onClick, 
           </p>
         )}
       </div>
-    </div>
-    <div className="p-3 border-t border-gray-100">
-      <button
-        onClick={onBasalamPageClick}
-        className="w-full flex items-center justify-center py-2 px-3 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition duration-200 ease-in-out shadow-sm"
-      >
-        <Eye size={16} className="ml-2" />
-        مشاهده در Basalam
-      </button>
     </div>
   </div>
 );
