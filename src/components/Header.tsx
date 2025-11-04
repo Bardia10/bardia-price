@@ -65,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({
         {onHelp ? (
           <button
             onClick={onHelp}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition-all duration-200 whitespace-nowrap"
+            className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-full transition-all duration-200 whitespace-nowrap shadow-lg shadow-red-300/50 hover:shadow-xl hover:shadow-red-400/60 animate-pulse"
             title="راهنمایی"
           >
             <HelpCircle size={18} />
