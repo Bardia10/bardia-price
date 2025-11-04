@@ -20,6 +20,7 @@ import { GlobalLoadingOverlay } from "./components/GlobalLoadingOverlay";
 import { Modal } from "./components/Modal";
 import { Header } from "./components/Header";
 import { MyProductCard } from "./components/MyProductCard";
+import FloatingSupportButton from "./components/FloatingSupportButton";
 
 // utils
 import { formatPrice } from "./lib/format";
@@ -394,6 +395,8 @@ const AppContent: React.FC = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <GlobalLoadingOverlay isLoading={globalLoading} />
+        {/* Floating Support Button - Available on all pages */}
+        {basalamToken && <FloatingSupportButton />}
       </div>
     </AppContext.Provider>
   );
