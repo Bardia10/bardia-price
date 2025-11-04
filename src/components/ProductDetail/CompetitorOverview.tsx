@@ -102,7 +102,7 @@ const CompetitorOverview: React.FC<Props> = ({
       ) : competitorsCount > 0 ? (
         <>
           <div className="mb-3 space-y-3">
-            {lowestBadgeText && lowestCompetitorPrice > 0 && (
+            {lowestCompetitorPrice > 0 ? (
               <div className="flex flex-wrap items-center gap-2 text-lg p-2 rounded-lg border border-gray-100 shadow-sm bg-gray-50/30">
                 <span className="font-semibold text-gray-800">
                   کمترین قیمت رقیب ها:
@@ -110,22 +110,42 @@ const CompetitorOverview: React.FC<Props> = ({
                 <span className="text-emerald-600 font-bold">
                   {formatPrice(lowestCompetitorPrice)}
                 </span>
-                <span
-                  className={`px-2 py-0.5 rounded text-md border ${lowestBadgeClass}`}
-                >
-                  {lowestBadgeText}
+                {lowestBadgeText && (
+                  <span
+                    className={`px-2 py-0.5 rounded text-md border ${lowestBadgeClass}`}
+                  >
+                    {lowestBadgeText}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2 text-lg p-2 rounded-lg border border-gray-100 shadow-sm bg-gray-50/30">
+                <span className="font-semibold text-gray-600">
+                  کمترین قیمت رقیب ها:
+                </span>
+                <span className="text-gray-500 text-sm italic">
+                  در حال محاسبه...
                 </span>
               </div>
             )}
 
-            {averageCompetitorPrice > 0 && (
+            {averageCompetitorPrice > 0 ? (
               <div className="flex flex-wrap items-center gap-2 text-lg mt-1 p-2 rounded-lg border border-gray-100 shadow-sm bg-gray-50/30">
                 <span className="font-semibold">میانگین قیمت رقیب ها:</span>{" "}
                 {formatPrice(averageCompetitorPrice)}
-                <span
-                  className={`px-2 py-0.5 rounded text-md border ${avgBadgeClass}`}
-                >
-                  {avgBadgeText}
+                {avgBadgeText && (
+                  <span
+                    className={`px-2 py-0.5 rounded text-md border ${avgBadgeClass}`}
+                  >
+                    {avgBadgeText}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2 text-lg mt-1 p-2 rounded-lg border border-gray-100 shadow-sm bg-gray-50/30">
+                <span className="font-semibold text-gray-600">میانگین قیمت رقیب ها:</span>
+                <span className="text-gray-500 text-sm italic">
+                  در حال محاسبه...
                 </span>
               </div>
             )}

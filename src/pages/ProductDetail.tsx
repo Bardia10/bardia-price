@@ -173,6 +173,12 @@ const ProductDetail = () => {
 
 
   // Hook to get competitor overview data
+  console.log("[ProductDetail] 🎯 Calling useCompetitorsOverview with:", {
+    actualProductId,
+    productPrice: productDetail?.price || 0,
+    hasProductDetail: !!productDetail
+  });
+  
   const { 
     refresh: refreshCompetitorsOverview,
     ...competitorsOverviewData 

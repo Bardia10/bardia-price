@@ -50,15 +50,24 @@ export function useCompetitorsOverview(
       console.log("[useCompetitorsOverview] Skipping fetch — no productId yet");
       return;
     }
+    
+    if (productPrice <= 0) {
+      console.log("[useCompetitorsOverview] ⚠️ Skipping fetch — productPrice is 0 or invalid:", productPrice);
+      return;
+    }
 
-    console.log(`[useCompetitorsOverview] Fetching competitors overview (type: ${type}) for productId:`, productId);
+    console.log(`[useCompetitorsOverview] 🔵 FETCHING competitors overview (type: ${type})`, {
+      productId,
+      productPrice,
+      timestamp: new Date().toISOString()
+    });
     setIsLoading(true);
     setError(null);
 
     try {
       const fetcher = type === 'light' ? fetchCompetitorsOverviewLight : fetchCompetitorsOverview;
       const rawData = await fetcher(authorizedFetch, productId);
-      console.log("[useCompetitorsOverview] Raw API response:", rawData);
+      console.log("[useCompetitorsOverview] ✅ Raw API response:", rawData);
 
       // Normalize data from either snake_case (light) or camelCase (full)
       const data = {
@@ -83,6 +92,13 @@ export function useCompetitorsOverview(
       let lowestBadgeClass = '';
       let avgBadgeText = '';
       let avgBadgeClass = '';
+
+      console.log("[useCompetitorsOverview] 📊 Starting price comparison logic:", {
+        competitorsCount: data.competitorsCount,
+        productPrice,
+        minPrice: data.minPrice,
+        averagePrice: data.averagePrice
+      });
 
       if (data.competitorsCount > 0 && productPrice > 0) {
         // Use API-provided average price for comparison
@@ -117,11 +133,17 @@ export function useCompetitorsOverview(
           }
         }
       } else {
+        console.log("[useCompetitorsOverview] ⚠️ FALLBACK: No competitors or productPrice is 0 - setting default badge text");
         lowestBadgeText = 'قیمت شما عالی است';
         lowestBadgeClass = 'bg-green-50 text-green-700 border-green-200';
         avgBadgeText = 'قیمت شما عالی است';
         avgBadgeClass = 'bg-green-50 text-green-700 border-green-200';
       }
+      
+      console.log("[useCompetitorsOverview] 🏁 Final badge values:", {
+        lowestBadgeText,
+        avgBadgeText
+      });
       
       setLowestBadgeText(lowestBadgeText);
       setLowestBadgeClass(lowestBadgeClass);
@@ -145,6 +167,12 @@ export function useCompetitorsOverview(
   }, [productId, productPrice, authorizedFetch, setBasalamToken, navigate]);
 
   useEffect(() => {
+    console.log("[useCompetitorsOverview] 🔄 useEffect triggered - dependencies changed:", {
+      productId,
+      productPrice,
+      refreshTrigger
+    });
+    
     let active = true;
 
     if (active) {
@@ -153,7 +181,7 @@ export function useCompetitorsOverview(
 
     return () => {
       active = false;
-      console.log("[useCompetitorsOverview] Cleanup function run");
+      console.log("[useCompetitorsOverview] 🧹 Cleanup function run");
     };
   }, [productId, productPrice, authorizedFetch, refreshTrigger, load]);
 
