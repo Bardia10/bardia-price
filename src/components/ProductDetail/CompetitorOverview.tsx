@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Eye } from "lucide-react";
+import { Eye, Search } from "lucide-react";
 import LoadingSpinner from "../LoadingSpinner";
 import { formatPrice } from "../../lib/format";
 
@@ -26,6 +26,7 @@ interface Props {
   avgBadgeClass: string;
   onOpenModal: () => void;
   onRefresh?: () => void; // New prop for refresh functionality
+  onScrollToSearch?: () => void; // ✅ New prop for scrolling to search section
 }
 
 const CompetitorOverview: React.FC<Props> = ({
@@ -41,6 +42,7 @@ const CompetitorOverview: React.FC<Props> = ({
   avgBadgeClass,
   onOpenModal,
   onRefresh,
+  onScrollToSearch, // ✅ New prop
 }) => {
   useEffect(() => {
     console.log("[CompetitorOverview] Props:", {
@@ -162,7 +164,23 @@ const CompetitorOverview: React.FC<Props> = ({
           </div>
         </>
       ) : (
-        <p className="text-gray-500 text-sm">هنوز رقیبی اضافه نشده است.</p>
+        <div className="flex flex-col items-center gap-4 py-4">
+          <p className="text-gray-500 text-base">هنوز رقیبی اضافه نشده است.</p>
+          {onScrollToSearch && (
+            <>
+              <p className="text-gray-700 text-base font-medium text-center px-4">
+                برای افزودن رقیب اینجا کلیک کنید
+              </p>
+              <button
+                onClick={onScrollToSearch}
+                className="py-3 px-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-base font-semibold rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2"
+              >
+                <Search size={18} />
+                افزودن رقیب
+              </button>
+            </>
+          )}
+        </div>
       )}
     </div>
   );

@@ -47,7 +47,7 @@ const SearchMethodModal: React.FC<SearchMethodModalProps> = ({
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between rounded-t-xl">
-          <h2 className="text-xl font-bold text-gray-800">انتخاب روش جستجو</h2>
+          <h2 className="text-xl font-bold text-gray-800">انتخاب روش جستجوی رقیب</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition"

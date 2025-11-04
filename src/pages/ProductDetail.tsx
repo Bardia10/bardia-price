@@ -135,6 +135,8 @@ const ProductDetail = () => {
   // Pagination for similar products
   const holdTimerRef = useRef<number | null>(null);
   const similarsContainerRef = useRef<HTMLDivElement | null>(null);
+  const searchSectionRef = useRef<HTMLDivElement | null>(null); // New ref for scrolling to search section
+  const [triggerSearchModal, setTriggerSearchModal] = useState(false); // Trigger for opening search modal
 
   // New confirmed competitors (fetched from webhook + Basalam core details)
   type ConfirmedCompetitorDetail = { id: number; title: string; price: number; photo: string; vendorIdentifier: string; productUrl: string };
@@ -519,6 +521,17 @@ const {
     }
   };
 
+  // Scroll to search section (for adding competitors)
+  const scrollToSearchSection = () => {
+    searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Trigger the search modal to open after scrolling
+    setTimeout(() => {
+      setTriggerSearchModal(true);
+      // Reset the trigger after a short delay
+      setTimeout(() => setTriggerSearchModal(false), 100);
+    }, 600); // Wait for scroll animation to complete
+  };
+
 
 
 
@@ -648,6 +661,7 @@ const {
           avgBadgeClass={avgBadgeClass}
           onOpenModal={() => setIsCompetitorsModalOpen(true)}
           onRefresh={() => setRefreshKey((k) => k + 1)}
+          onScrollToSearch={scrollToSearchSection} // ✅ New prop for scrolling to search
         />
 
 
@@ -668,30 +682,33 @@ const {
                 </div>
 
         {/* Similar products can be toggled; competitors modal is independent */}
-        <SimilarProducts
-          showSimilars={showSimilars}
-          similarsContainerRef={similarsContainerRef}
-          hasFetchedSimilars={hasFetchedSimilars}
-          similarSearchTerm={similarSearchTerm}
-          setSimilarSearchTerm={setSimilarSearchTerm}
-          isLoadingSearch={isLoadingSearch}
-          searchError={searchError}
-          sortedSimilars={sortedSimilars}
-          addingCompetitorIds={addingCompetitorIds}
-          deletingCompetitorIds={deletingCompetitorIds}
-          addAsCompetitor={addAsCompetitor}
-          handleDeleteCompetitorClick={handleDeleteCompetitorClick}
-          startHoldToZoom={startHoldToZoom}
-          cancelHoldToZoom={cancelHoldToZoom}
-          hasMoreSimilarPages={hasMoreSimilarPages}
-          loadMoreSimilars={loadMoreSimilars}
-          isLoadingMoreSimilars={isLoadingMoreSimilars}
-          fetchSimilarProducts={fetchSimilarProducts}
-          fetchTextSearch={fetchTextSearch}
-          searchMode={searchMode}
-          textSearchQuery={textSearchQuery}
-          productTitle={productDetail.title}
-        />
+        <div ref={searchSectionRef}>
+          <SimilarProducts
+            showSimilars={showSimilars}
+            similarsContainerRef={similarsContainerRef}
+            hasFetchedSimilars={hasFetchedSimilars}
+            similarSearchTerm={similarSearchTerm}
+            setSimilarSearchTerm={setSimilarSearchTerm}
+            isLoadingSearch={isLoadingSearch}
+            searchError={searchError}
+            sortedSimilars={sortedSimilars}
+            addingCompetitorIds={addingCompetitorIds}
+            deletingCompetitorIds={deletingCompetitorIds}
+            addAsCompetitor={addAsCompetitor}
+            handleDeleteCompetitorClick={handleDeleteCompetitorClick}
+            startHoldToZoom={startHoldToZoom}
+            cancelHoldToZoom={cancelHoldToZoom}
+            hasMoreSimilarPages={hasMoreSimilarPages}
+            loadMoreSimilars={loadMoreSimilars}
+            isLoadingMoreSimilars={isLoadingMoreSimilars}
+            fetchSimilarProducts={fetchSimilarProducts}
+            fetchTextSearch={fetchTextSearch}
+            searchMode={searchMode}
+            textSearchQuery={textSearchQuery}
+            productTitle={productDetail.title}
+            triggerSearchModal={triggerSearchModal}
+          />
+        </div>
 
         {/* Competitors Modal */}
         <CompetitorsModal

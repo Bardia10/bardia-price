@@ -31,6 +31,7 @@ interface SimilarProductsProps {
   searchMode: "combined" | "text";
   textSearchQuery: string;
   productTitle: string;
+  triggerSearchModal?: boolean; // ✅ New prop to trigger modal from parent
 }
 
 const SimilarProducts: React.FC<SimilarProductsProps> = ({
@@ -56,9 +57,17 @@ const SimilarProducts: React.FC<SimilarProductsProps> = ({
   searchMode,
   textSearchQuery,
   productTitle,
+  triggerSearchModal, // ✅ New prop
 }) => {
   const [showSearchMethodModal, setShowSearchMethodModal] = useState(false);
   const [showTextSearchModal, setShowTextSearchModal] = useState(false);
+
+  // ✅ Watch for trigger from parent to open modal
+  React.useEffect(() => {
+    if (triggerSearchModal) {
+      setShowSearchMethodModal(true);
+    }
+  }, [triggerSearchModal]);
 
   const handleSearchMethodSelect = (method: "text" | "image" | "combined") => {
     console.log('[SimilarProducts] Search method selected:', method);
